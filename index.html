@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Reviews Timeline</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- APIキー設定モーダル -->
+    <div id="apiKeyModal" class="modal">
+        <div class="modal-content">
+            <h2>Google Maps API キー設定</h2>
+            <p>このアプリを使用するには、Google Maps Platform APIキーが必要です。</p>
+            <input type="text" id="apiKeyInput" placeholder="APIキーを入力してください" />
+            <button id="saveApiKeyBtn" class="primary-btn">保存</button>
+            <p class="modal-note">
+                APIキーの取得方法は<a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">こちら</a>をご覧ください。<br>
+                必要なAPI: Maps JavaScript API, Places API (New)
+            </p>
+        </div>
+    </div>
+
+    <!-- メインコンテナ -->
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1>📍 Map Reviews Timeline</h1>
+            <button id="settingsBtn" class="icon-btn" title="設定">⚙️</button>
+        </header>
+
+        <!-- コンテンツエリア -->
+        <div class="content">
+            <!-- 左側: 地図 -->
+            <div class="map-section">
+                <div id="map"></div>
+                <div class="map-controls">
+                    <button id="searchReviewsBtn" class="primary-btn">この範囲の口コミを取得</button>
+                    <div id="loadingIndicator" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <span>口コミを取得中...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側: タイムライン -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h2>口コミタイムライン</h2>
+                    <div class="sort-controls">
+                        <label for="sortSelect">並び替え:</label>
+                        <select id="sortSelect">
+                            <option value="newest">新しい順</option>
+                            <option value="oldest">古い順</option>
+                            <option value="highest">高評価順</option>
+                            <option value="lowest">低評価順</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="timeline" class="timeline">
+                    <div class="empty-state">
+                        <p>「この範囲の口コミを取得」ボタンを押して、<br>地図範囲内のスポットの口コミを表示します。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- エラー通知 -->
+    <div id="errorToast" class="toast" style="display: none;"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
