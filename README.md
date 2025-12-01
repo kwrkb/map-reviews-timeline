@@ -1,5 +1,11 @@
 # Map Reviews Timeline
 
+[English](#english) | [日本語](#日本語)
+
+---
+
+## 日本語
+
 Google Mapsで表示している範囲内のスポットの口コミを、X（旧Twitter）風のタイムラインUIで一覧表示するWebアプリケーションです。
 
 ## 特徴
@@ -32,8 +38,7 @@ src/
 │   └── index.ts           # 型定義
 ├── services/
 │   ├── MapService.ts      # Google Maps操作
-│   ├── PlacesService.ts   # Places API (New) + 並列処理
-│   └── StorageService.ts  # ユーティリティ
+│   └── PlacesService.ts   # Places API (New) + 並列処理
 ├── managers/
 │   ├── UIManager.ts       # DOM操作・イベント管理
 │   └── ReviewManager.ts   # レビュー表示・ソート
@@ -237,3 +242,244 @@ MIT License
 - このアプリはGoogle Maps Platform APIを使用します。利用規約を遵守してください
 - APIキーは第三者に共有しないでください
 - 商用利用する場合はGoogle Maps Platformの利用規約を確認してください
+
+---
+
+## English
+
+A web application that displays reviews of spots within the visible Google Maps area in an X (formerly Twitter)-style timeline UI.
+
+### Features
+
+- 🗺️ **Interactive Map**: Freely select areas on Google Maps
+- ⚡ **Fast Review Fetching**: High-speed parallel processing with Promise.allSettled for up to 20 spots
+- 📝 **Timeline Display**: Easy-to-read reviews in X-style dark theme UI
+- 🔄 **Flexible Sorting**: Sort by newest/oldest/highest rating/lowest rating
+- 🔍 **Place Search**: Quickly jump to destinations by place name or address
+- 🏗️ **Modern Architecture**: Fast development environment with TypeScript + Vite
+- 🦀 **Fast Linting**: Lightning-fast code quality checks with Biome (Rust-based)
+
+### Tech Stack
+
+#### Core Technologies
+- **TypeScript 5.3+**: Type-safe development
+- **Vite 5.0+**: Fast build tool (with HMR support)
+- **Google Maps JavaScript API**: Map display and manipulation
+- **Google Places API (New)**: Spot information and review fetching
+
+#### Development Tools
+- **Biome**: Rust-based linter/formatter (ESLint + Prettier alternative)
+
+#### Architecture
+
+```
+src/
+├── app.ts                 # Main application
+├── types/
+│   └── index.ts           # Type definitions
+├── services/
+│   ├── MapService.ts      # Google Maps operations
+│   └── PlacesService.ts   # Places API (New) + parallel processing
+├── managers/
+│   ├── UIManager.ts       # DOM manipulation & event management
+│   └── ReviewManager.ts   # Review display & sorting
+└── utils/
+    └── helpers.ts         # Helper functions
+```
+
+### Setup
+
+#### 1. Clone the Repository
+
+```bash
+git clone https://github.com/kwrkb/map-reviews-timeline.git
+cd map-reviews-timeline
+```
+
+#### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+#### 3. Google Cloud Platform Configuration
+
+##### 3-1. Create a Project
+
+1. Access [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project
+
+##### 3-2. Enable Required APIs
+
+**Must** enable the following 2 APIs:
+
+- ✅ **Maps JavaScript API**
+- ✅ **Places API (New)**
+
+Enabling steps:
+1. Open "APIs & Services" > "Library" in Google Cloud Console
+2. Search for and enable the above APIs
+
+##### 3-3. Create an API Key
+
+1. Open "APIs & Services" > "Credentials"
+2. Select "Create Credentials" > "API Key"
+3. Copy the created API key
+
+**Recommended to set restrictions on the API key for security:**
+- **Application restrictions**: HTTP referrers (websites)
+- **API restrictions**: Maps JavaScript API, Places API (New)
+
+#### 4. Environment Variable Configuration
+
+Set your API key in the `VITE_GOOGLE_MAPS_API_KEY` environment variable.
+
+##### Development Environment Setup Example
+
+```bash
+# Specify environment variable at startup
+VITE_GOOGLE_MAPS_API_KEY="your_api_key_here" npm run dev
+```
+
+Or add to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
+
+```bash
+export VITE_GOOGLE_MAPS_API_KEY="your_api_key_here"
+```
+
+### Usage
+
+#### Start Development Server
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:8000/` in your browser.
+
+#### Production Build
+
+```bash
+# TypeScript compile + Vite build
+npm run build
+
+# Preview build result
+npm run preview
+```
+
+Build output is generated in the `dist/` directory.
+
+#### Code Quality Management
+
+```bash
+# Lint check
+npm run lint
+
+# Apply formatting
+npm run format
+
+# Lint + format batch check
+npm run check
+
+# Auto-fix
+npm run check:fix
+```
+
+### How to Use the App
+
+#### 1. Manipulate the Map
+Move and zoom the map with mouse or touch to display the area where you want to fetch reviews
+
+#### 2. Place Search (Optional)
+Enter a place name or address in the search box to quickly jump to your destination
+
+#### 3. Fetch Reviews
+Click the "Get reviews in this area" button
+
+**Process flow:**
+1. Search for spots within the visible area (up to 20)
+2. **Parallel fetch** details for each spot (Promise.allSettled)
+3. Integrate reviews from all spots and display in timeline
+
+#### 4. Browse Timeline
+Reviews are displayed in the timeline on the right side
+
+#### 5. Sort
+Change the sort order with the dropdown at the top of the timeline:
+- Newest first
+- Oldest first
+- Highest rating
+- Lowest rating
+
+### API Limits and Pricing
+
+#### Free Tier
+
+Google Maps Platform has a **$200 monthly free tier**:
+- Maps JavaScript API: Up to 28,000 requests/month free
+- Places API (New): Pricing varies by fields fetched
+
+#### Estimated Usage Cost for This App
+
+- Up to 20 spots per search
+- Detail fetch for each spot (displayName, reviews, types, location)
+
+**Important:** API usage and pricing can be checked in [Google Cloud Console](https://console.cloud.google.com/). Budget alerts are recommended.
+
+#### Tips to Reduce Costs
+
+- Narrow the search area
+- Don't search too frequently
+- Close the tab when not in use
+
+### API Limitations
+
+- **Review fetch limit**: Due to Places API (New) specifications, maximum 5 reviews per spot
+- **Search spot count**: Limited to maximum 20 spots per search to reduce load
+- **Search radius**: Maximum 5,000m due to Places API limits
+
+### Troubleshooting
+
+#### Map Not Displaying
+
+- Verify that `VITE_GOOGLE_MAPS_API_KEY` environment variable is set
+- Verify that Maps JavaScript API is enabled
+- Check error messages in browser console
+
+#### Can't Fetch Reviews
+
+- Verify that **Places API (New)** is enabled (not Legacy version)
+- Check API key restriction settings
+- Verify that spots exist in the selected area
+- Check browser console for `PERMISSION_DENIED` errors
+
+#### "API Limit Exceeded" Error
+
+- You may have exceeded the free tier
+- Check usage in Google Cloud Console
+- Wait a while and try again
+
+### Contributing to Development
+
+#### Pre-Pull Request Checklist
+
+```bash
+# Type check
+npx tsc --noEmit
+
+# Code quality check
+npm run check
+
+# Build verification
+npm run build
+```
+
+### License
+
+MIT License
+
+### Notices
+
+- This app uses Google Maps Platform API. Please comply with the terms of service
+- Do not share your API key with third parties
+- If using commercially, verify Google Maps Platform terms of service
