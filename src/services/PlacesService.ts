@@ -79,9 +79,10 @@ export class PlacesService {
   ): Promise<Review[]> {
     const totalPlaces = Math.min(places.length, maxPlaces);
 
-    const placeDetailsPromises = places.slice(0, totalPlaces).map((place) =>
-      this.getPlaceDetails(place.place_id!)
-    );
+    const placeDetailsPromises = places
+      .slice(0, totalPlaces)
+      .filter((place) => place.place_id)
+      .map((place) => this.getPlaceDetails(place.place_id as string));
 
     const results = await Promise.allSettled(placeDetailsPromises);
 

@@ -1,5 +1,5 @@
 import type { Review } from '../types';
-import { getRelativeTime, getCategoryName, escapeHtml, generateStars } from '../utils/helpers';
+import { escapeHtml, generateStars, getCategoryName, getRelativeTime } from '../utils/helpers';
 
 /**
  * ReviewManager
@@ -84,7 +84,7 @@ export class ReviewManager {
         </div>
       </div>
       <div class="review-body">
-        <div class="place-info">📍 ${escapeHtml(review.placeName || '')}${category ? ' · ' + category : ''}</div>
+        <div class="place-info">📍 ${escapeHtml(review.placeName || '')}${category ? ` · ${category}` : ''}</div>
         <div class="rating">${stars}</div>
         <p class="review-text">${escapeHtml(review.text)}</p>
       </div>

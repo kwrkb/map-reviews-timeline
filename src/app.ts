@@ -1,8 +1,8 @@
-import { StorageService } from './services/StorageService';
+import { ReviewManager } from './managers/ReviewManager';
+import { UIManager } from './managers/UIManager';
 import { MapService } from './services/MapService';
 import { PlacesService } from './services/PlacesService';
-import { UIManager } from './managers/UIManager';
-import { ReviewManager } from './managers/ReviewManager';
+import { StorageService } from './services/StorageService';
 import { getElement } from './utils/helpers';
 
 /**
@@ -80,7 +80,9 @@ class App {
       };
 
       script.onerror = () => {
-        this.uiManager.showError('Google Maps APIの読み込みに失敗しました。APIキーを確認してください。');
+        this.uiManager.showError(
+          'Google Maps APIの読み込みに失敗しました。APIキーを確認してください。'
+        );
         this.uiManager.showApiKeyModal(apiKey);
         reject(new Error('Failed to load Google Maps API'));
       };
