@@ -8,12 +8,13 @@ Map Reviews Timelineは、Google Maps上で表示している範囲内のスポ�
 
 ## Technology Stack
 
-- **Frontend**: Vanilla JavaScript (No frameworks)
+- **Frontend**: TypeScript + Vite
 - **APIs**:
   - Google Maps JavaScript API
   - Google Places API (New)
-- **Storage**: localStorage (for API key persistence)
+- **Storage**: Environment variables (preferred) or localStorage (fallback)
 - **Styling**: Pure CSS with X-inspired dark theme
+- **Build Tool**: Vite
 
 ## Architecture
 
@@ -21,27 +22,35 @@ Map Reviews Timelineは、Google Maps上で表示している範囲内のスポ�
 
 ```
 map-reviews-timeline/
-├── index.html      # Main HTML structure
-├── style.css       # X-style dark theme CSS
-├── app.js          # Core application logic
-├── README.md       # Japanese setup guide
-└── CLAUDE.md       # This file
+├── src/
+│   ├── app.ts          # Core application logic (TypeScript)
+│   └── vite-env.d.ts   # Vite environment type definitions
+├── index.html          # Main HTML structure
+├── style.css           # X-style dark theme CSS
+├── package.json        # Dependencies and scripts
+├── tsconfig.json       # TypeScript configuration
+├── vite.config.ts      # Vite configuration
+├── .env.example        # Environment variables template
+├── .gitignore          # Git ignore rules
+├── README.md           # Japanese setup guide
+└── CLAUDE.md           # This file
 ```
 
 ### Key Components
 
-#### 1. API Key Management (`app.js`)
-- API keys are stored in localStorage
-- Modal UI for initial setup and configuration
+#### 1. API Key Management (`src/app.ts`)
+- **Environment variables (VITE_GOOGLE_MAPS_API_KEY)**: Preferred method for API key storage
+- **localStorage**: Fallback when environment variable is not set
+- Modal UI for manual API key entry (when env var is not configured)
 - Keys are validated on Google Maps script load
 
-#### 2. Map Integration (`app.js`)
+#### 2. Map Integration (`src/app.ts`)
 - Initialized via `initMap()` function
 - Default center: Tokyo Station (35.6812, 139.7671)
 - Dark theme map styling
 - Uses `google.maps.places.PlacesService` for API calls
 
-#### 3. Review Fetching Flow (`app.js`)
+#### 3. Review Fetching Flow (`src/app.ts`)
 ```
 User clicks "Get Reviews" button
   → Get current map bounds
@@ -70,7 +79,7 @@ User clicks "Get Reviews" button
 ### Data Flow
 
 ```
-localStorage (API Key)
+Environment Variable / localStorage (API Key)
   ↓
 Google Maps Script Load
   ↓
@@ -98,33 +107,48 @@ Sort & Display (Timeline DOM)
 
 ## Development Commands
 
-### Local Development
-
-This app requires a local server (Google Maps API doesn't work with `file://` protocol):
+### Setup
 
 ```bash
-# Using Python
-python -m http.server 8000
+# Install dependencies
+npm install
 
-# Using Node.js http-server
-npx http-server -p 8000
+# Copy environment template and set your API key
+cp .env.example .env
+# Edit .env and set VITE_GOOGLE_MAPS_API_KEY=your_api_key
+```
 
-# Using VS Code Live Server extension
-Right-click index.html → "Open with Live Server"
+### Local Development
+
+```bash
+# Start development server (with hot reload)
+npm run dev
+```
+
+The app will be available at http://localhost:8000
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
 ### Testing
 
-Since this is vanilla JS without build tools:
 - Test manually by opening in browser
 - Check browser console for API errors
 - Monitor Network tab for API requests/responses
+- TypeScript type checking: `npx tsc --noEmit`
 
 ## Common Development Tasks
 
 ### Modifying Map Styles
 
-Map styles are defined in `initMap()` function in app.js. The current dark theme uses:
+Map styles are defined in `initMap()` function in `src/app.ts`. The current dark theme uses:
 - Background: `#242f3e`
 - Water: `#17263c`
 - Text fill: `#746855`
@@ -146,7 +170,7 @@ Review cards are generated in `createReviewCard()` function. The structure follo
 ### Adding New Sort Options
 
 1. Add option to `<select id="sortSelect">` in index.html
-2. Add case to switch statement in `sortAndDisplayReviews()` in app.js
+2. Add case to switch statement in `sortAndDisplayReviews()` in `src/app.ts`
 
 ### Adjusting Search Parameters
 
@@ -156,7 +180,8 @@ In `searchReviews()` function:
 
 ## Security Considerations
 
-- API keys are stored in localStorage (browser-side only)
+- **Recommended**: Use environment variables for API keys (not committed to git)
+- **Fallback**: localStorage (browser-side only)
 - No server-side validation or proxy
 - Users must secure their own API keys
 - API key restrictions should be configured in Google Cloud Console
