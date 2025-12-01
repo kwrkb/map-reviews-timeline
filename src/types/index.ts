@@ -15,7 +15,8 @@ export interface Review {
 
 export interface PlaceDetailsResult {
   name: string;
-  reviews?: google.maps.places.PlaceReview[];
+  // biome-ignore lint/suspicious/noExplicitAny: New Places API review type is not yet fully typed
+  reviews?: any[];
   types?: string[];
-  geometry?: google.maps.places.PlaceGeometry;
+  geometry?: { location: google.maps.LatLng };
 }

@@ -2,14 +2,12 @@ import { ReviewManager } from './managers/ReviewManager';
 import { UIManager } from './managers/UIManager';
 import { MapService } from './services/MapService';
 import { PlacesService } from './services/PlacesService';
-import { StorageService } from './services/StorageService';
 import { getElement } from './utils/helpers';
 
 /**
  * アプリケーションのメインクラス
  */
 class App {
-  private storageService: StorageService;
   private mapService: MapService;
   private uiManager: UIManager;
   private reviewManager: ReviewManager;
@@ -17,7 +15,6 @@ class App {
   private apiKey: string = '';
 
   constructor() {
-    this.storageService = new StorageService();
     this.mapService = new MapService();
     this.uiManager = new UIManager();
     this.reviewManager = new ReviewManager();
@@ -27,7 +24,7 @@ class App {
    * アプリケーションを初期化
    */
   async init(): Promise<void> {
-    // 環境変数からAPIキーを取得（優先）、なければlocalStorageから
+    // 環境変数からAPIキーを取得(必須)
     const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
     if (envApiKey) {
@@ -36,15 +33,11 @@ class App {
       this.uiManager.hideSettingsButton();
       await this.loadGoogleMapsScript(this.apiKey);
     } else {
-      // 環境変数がない場合はlocalStorageから取得
-      const storedApiKey = this.storageService.getApiKey();
-
-      if (!storedApiKey) {
-        this.uiManager.showApiKeyModal();
-      } else {
-        this.apiKey = storedApiKey;
-        await this.loadGoogleMapsScript(this.apiKey);
-      }
+      // 環境変数が設定されていない場合はエラー表示
+      this.uiManager.showError(
+        'APIキーが設定されていません。環境変数 VITE_GOOGLE_MAPS_API_KEY を設定してください。'
+      );
+      return;
     }
 
     // イベントリスナーの設定
@@ -98,41 +91,28 @@ class App {
    */
   private initMap(): void {
     const mapElement = getElement<HTMLDivElement>('map');
-    const map = this.mapService.initMap(mapElement);
+    this.mapService.initMap(mapElement);
 
-    // PlacesService を初期化（地図インスタンスが必要）
-    this.placesService = new PlacesService(map);
+    // PlacesService を初期化
+    this.placesService = new PlacesService();
   }
 
   /**
-   * APIキー保存処理
+   * APIキー保存処理(無効化)
    */
   private async handleSaveApiKey(): Promise<void> {
-    const apiKey = this.uiManager.getApiKeyInput();
-
-    if (!apiKey) {
-      this.uiManager.showError('APIキーを入力してください');
-      return;
-    }
-
-    this.apiKey = apiKey;
-    this.storageService.saveApiKey(apiKey);
-    this.uiManager.hideApiKeyModal();
-
-    // 既にスクリプトが読み込まれている場合はリロード
-    if (window.google) {
-      location.reload();
-    } else {
-      await this.loadGoogleMapsScript(apiKey);
-    }
+    this.uiManager.showError(
+      'APIキーの保存は無効化されています。環境変数 VITE_GOOGLE_MAPS_API_KEY を設定してください。'
+    );
   }
 
   /**
-   * 設定表示処理
+   * 設定表示処理(無効化)
    */
   private handleShowSettings(): void {
-    const apiKey = this.storageService.getApiKey() || '';
-    this.uiManager.showApiKeyModal(apiKey);
+    this.uiManager.showError(
+      '設定は無効化されています。環境変数 VITE_GOOGLE_MAPS_API_KEY を設定してください。'
+    );
   }
 
   /**
@@ -224,7 +204,7 @@ class App {
     }
 
     try {
-      const location = await this.placesService.geocodeAddress(searchQuery);
+      const location = await this.placesService.searchPlaceByText(searchQuery);
 
       if (location) {
         this.mapService.panTo({ lat: location.lat(), lng: location.lng() }, 15);
@@ -232,7 +212,7 @@ class App {
         this.uiManager.showError(`「${searchQuery}」が見つかりませんでした`);
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('Place Search error:', error);
       this.uiManager.showError('地名検索中にエラーが発生しました');
     }
   }

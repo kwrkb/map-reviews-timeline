@@ -2,138 +2,37 @@ import type { PlaceDetailsResult, Review } from '../types';
 
 /**
  * PlacesService
- * Google Places API の呼び出しを担当
+ * Google Places API (New) の呼び出しを担当
  */
 export class PlacesService {
-  private placesService: google.maps.places.PlacesService;
-  private geocoder: google.maps.Geocoder;
-
-  constructor(map: google.maps.Map) {
-    this.placesService = new google.maps.places.PlacesService(map);
-    this.geocoder = new google.maps.Geocoder();
-  }
-
   /**
    * 指定範囲内の近隣スポットを検索
    * @param bounds - 検索範囲
    * @returns スポットの配列
    */
-  searchNearbyPlaces(bounds: google.maps.LatLngBounds): Promise<google.maps.places.PlaceResult[]> {
-    return new Promise((resolve, reject) => {
-      const center = bounds.getCenter();
-      const radius = this.calculateRadius(bounds);
+  async searchNearbyPlaces(bounds: google.maps.LatLngBounds): Promise<google.maps.places.Place[]> {
+    // New Places API: searchNearby
+    // boundsをlocationRestriction（円形）に変換
+    const center = bounds.getCenter();
+    const radius = this.calculateRadius(bounds);
 
-      const request: google.maps.places.PlaceSearchRequest = {
-        location: center,
+    const request = {
+      // FIXED: fields must be specified in the request
+      fields: ['id', 'displayName', 'formattedAddress', 'location', 'types'],
+      locationRestriction: {
+        center: { lat: center.lat(), lng: center.lng() },
         radius: radius,
-      };
+      },
+    };
 
-      this.placesService.nearbySearch(request, (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-          resolve(results);
-        } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve([]);
-        } else {
-          reject(new Error(`Places API error: ${status}`));
-        }
-      });
-    });
-  }
-
-  /**
-   * スポットの詳細情報を取得
-   * @param placeId - スポットID
-   * @returns スポットの詳細情報、またはnull
-   */
-  getPlaceDetails(placeId: string): Promise<PlaceDetailsResult | null> {
-    return new Promise((resolve, reject) => {
-      const request: google.maps.places.PlaceDetailsRequest = {
-        placeId: placeId,
-        fields: ['name', 'reviews', 'types', 'geometry'],
-      };
-
-      this.placesService.getDetails(request, (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-          resolve({
-            name: place.name || '',
-            reviews: place.reviews,
-            types: place.types,
-            geometry: place.geometry,
-          });
-        } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve(null);
-        } else {
-          reject(new Error(`Place Details API error: ${status}`));
-        }
-      });
-    });
-  }
-
-  /**
-   * 複数スポットの詳細情報を並列取得
-   * @param places - スポットの配列
-   * @param maxPlaces - 最大取得数
-   * @returns 口コミ付きスポット情報の配列
-   */
-  async fetchPlaceDetailsInParallel(
-    places: google.maps.places.PlaceResult[],
-    maxPlaces: number = 20
-  ): Promise<Review[]> {
-    const totalPlaces = Math.min(places.length, maxPlaces);
-
-    const placeDetailsPromises = places
-      .slice(0, totalPlaces)
-      .filter((place) => place.place_id)
-      .map((place) => this.getPlaceDetails(place.place_id as string));
-
-    const results = await Promise.allSettled(placeDetailsPromises);
-
-    // 成功したリクエストから口コミを抽出
-    const reviews: Review[] = [];
-    results.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value) {
-        const placeDetails = result.value;
-
-        if (placeDetails.reviews && placeDetails.reviews.length > 0) {
-          placeDetails.reviews.forEach((review) => {
-            reviews.push({
-              author_name: review.author_name || '匿名',
-              profile_photo_url: review.profile_photo_url,
-              rating: review.rating || 0,
-              text: review.text || '',
-              time: review.time || 0,
-              placeName: placeDetails.name,
-              placeTypes: placeDetails.types || [],
-              placeLocation: placeDetails.geometry?.location,
-            });
-          });
-        }
-      } else if (result.status === 'rejected') {
-        console.error('Place details error:', result.reason);
-      }
-    });
-
-    return reviews;
-  }
-
-  /**
-   * 地名から位置情報を検索（ジオコーディング）
-   * @param address - 地名または住所
-   * @returns 位置情報、または null
-   */
-  geocodeAddress(address: string): Promise<google.maps.LatLng | null> {
-    return new Promise((resolve, reject) => {
-      this.geocoder.geocode({ address }, (results, status) => {
-        if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
-          const location = results[0].geometry.location;
-          resolve(location);
-        } else if (status === google.maps.GeocoderStatus.ZERO_RESULTS) {
-          resolve(null);
-        } else {
-          reject(new Error(`Geocoding error: ${status}`));
-        }
-      });
-    });
+    try {
+      // FIXED: Correct method call
+      const { places } = await google.maps.places.Place.searchNearby(request);
+      return places || [];
+    } catch (error) {
+      console.error('Places Search error:', error);
+      return [];
+    }
   }
 
   /**
@@ -150,5 +49,105 @@ export class PlacesService {
 
     // 最大5000mに制限（Places API の制限）
     return Math.min(distance, 5000);
+  }
+
+  /**
+   * スポットの詳細情報を取得
+   * @param placeId - スポットID
+   * @returns スポットの詳細情報、またはnull
+   */
+  async getPlaceDetails(placeId: string): Promise<PlaceDetailsResult | null> {
+    try {
+      const place = new google.maps.places.Place({ id: placeId });
+      // FIXED: Correct field names for New Places API
+      await place.fetchFields({
+        fields: ['displayName', 'reviews', 'types', 'location'],
+      });
+
+      // FIXED: Correct property access for New Places API
+      return {
+        name: place.displayName || '',
+        reviews: place.reviews || [],
+        types: place.types || [],
+        // biome-ignore lint/suspicious/noExplicitAny: New Places API geometry adaptation
+        geometry: { location: place.location } as any,
+      };
+    } catch (error) {
+      console.error('Place Details error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 複数スポットの詳細情報を並列取得
+   * @param places - スポットの配列
+   * @param maxPlaces - 最大取得数
+   * @returns 口コミ付きスポット情報の配列
+   */
+  async fetchPlaceDetailsInParallel(
+    places: google.maps.places.Place[],
+    maxPlaces: number = 20
+  ): Promise<Review[]> {
+    const totalPlaces = Math.min(places.length, maxPlaces);
+
+    const placeDetailsPromises = places
+      .slice(0, totalPlaces)
+      .filter((place) => place.id)
+      .map((place) => this.getPlaceDetails(place.id as string));
+
+    const results = await Promise.allSettled(placeDetailsPromises);
+
+    // 成功したリクエストから口コミを抽出
+    const reviews: Review[] = [];
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value) {
+        const placeDetails = result.value;
+
+        if (placeDetails.reviews && placeDetails.reviews.length > 0) {
+          // biome-ignore lint/suspicious/noExplicitAny: New Places API review structure
+          placeDetails.reviews.forEach((review: any) => {
+            // FIXED: Correct field access for New Places API Review
+            reviews.push({
+              author_name: review.authorAttribution?.displayName || '匿名',
+              profile_photo_url: review.authorAttribution?.photoUri,
+              rating: review.rating || 0,
+              // FIXED: Use 'text' property (not 'originalText')
+              text: review.text?.text || review.text || '',
+              // FIXED: publishTime is an object with 'seconds' property in New API
+              time: review.publishTime?.seconds || Math.floor(Date.now() / 1000),
+              placeName: placeDetails.name,
+              placeTypes: placeDetails.types || [],
+              placeLocation: placeDetails.geometry?.location,
+            });
+          });
+        }
+      }
+    });
+
+    return reviews;
+  }
+
+  /**
+   * 地名から位置情報を検索（Text Search）
+   * @param query - 地名または住所
+   * @returns 位置情報、または null
+   */
+  async searchPlaceByText(query: string): Promise<google.maps.LatLng | null> {
+    try {
+      const request = {
+        textQuery: query,
+        // FIXED: fields must be specified as an array
+        fields: ['location'],
+      };
+      const { places } = await google.maps.places.Place.searchByText(request);
+
+      if (places && places.length > 0 && places[0].location) {
+        return places[0].location;
+      }
+      return null;
+    } catch (error) {
+      console.error('Text Search error:', error);
+      return null;
+    }
   }
 }
