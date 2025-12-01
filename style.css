@@ -152,6 +152,51 @@ body {
     border-right: 1px solid #2f3336;
 }
 
+.map-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background-color: #16181c;
+    border-bottom: 1px solid #2f3336;
+}
+
+.map-search-bar input {
+    flex: 1;
+    padding: 10px 15px;
+    background-color: #000000;
+    border: 1px solid #2f3336;
+    border-radius: 20px;
+    color: #e7e9ea;
+    font-size: 15px;
+}
+
+.map-search-bar input:focus {
+    outline: none;
+    border-color: #1d9bf0;
+}
+
+.search-btn {
+    background-color: #1d9bf0;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+}
+
+.search-btn:hover {
+    background-color: #1a8cd8;
+}
+
+.search-btn:active {
+    background-color: #1570b3;
+}
+
 #map {
     flex: 1;
     background-color: #000000;

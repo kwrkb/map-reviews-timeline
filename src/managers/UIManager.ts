@@ -8,6 +8,8 @@ interface EventHandlers {
   onShowSettings?: () => void;
   onSearchReviews?: () => void;
   onSortChange?: () => void;
+  onPlaceSearch?: () => void;
+  onThemeToggle?: () => void;
 }
 
 /**
@@ -25,6 +27,9 @@ export class UIManager {
     timeline: HTMLDivElement;
     loadingIndicator: HTMLDivElement;
     errorToast: HTMLDivElement;
+    placeSearchInput: HTMLInputElement;
+    placeSearchBtn: HTMLButtonElement;
+    themeToggleBtn: HTMLButtonElement;
   };
 
   constructor() {
@@ -38,6 +43,9 @@ export class UIManager {
       timeline: getElement<HTMLDivElement>('timeline'),
       loadingIndicator: getElement<HTMLDivElement>('loadingIndicator'),
       errorToast: getElement<HTMLDivElement>('errorToast'),
+      placeSearchInput: getElement<HTMLInputElement>('placeSearchInput'),
+      placeSearchBtn: getElement<HTMLButtonElement>('placeSearchBtn'),
+      themeToggleBtn: getElement<HTMLButtonElement>('themeToggleBtn'),
     };
   }
 
@@ -160,6 +168,19 @@ export class UIManager {
     if (handlers.onSortChange) {
       this.elements.sortSelect.addEventListener('change', handlers.onSortChange);
     }
+
+    if (handlers.onPlaceSearch) {
+      this.elements.placeSearchBtn.addEventListener('click', handlers.onPlaceSearch);
+      this.elements.placeSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && handlers.onPlaceSearch) {
+          handlers.onPlaceSearch();
+        }
+      });
+    }
+
+    if (handlers.onThemeToggle) {
+      this.elements.themeToggleBtn.addEventListener('click', handlers.onThemeToggle);
+    }
   }
 
   /**
@@ -168,5 +189,21 @@ export class UIManager {
    */
   getSortType(): string {
     return this.elements.sortSelect.value;
+  }
+
+  /**
+   * 地名検索の入力値を取得
+   * @returns 入力された地名
+   */
+  getPlaceSearchInput(): string {
+    return this.elements.placeSearchInput.value.trim();
+  }
+
+  /**
+   * テーマトグルボタンのアイコンを更新
+   * @param isDarkMode - ダークモードかどうか
+   */
+  updateThemeToggleIcon(isDarkMode: boolean): void {
+    this.elements.themeToggleBtn.textContent = isDarkMode ? '🌙' : '☀️';
   }
 }

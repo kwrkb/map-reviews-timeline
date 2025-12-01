@@ -60,6 +60,8 @@ class App {
       onShowSettings: () => this.handleShowSettings(),
       onSearchReviews: () => this.handleSearchReviews(),
       onSortChange: () => this.handleSortChange(),
+      onPlaceSearch: () => this.handlePlaceSearch(),
+      onThemeToggle: () => this.handleThemeToggle(),
     });
   }
 
@@ -203,6 +205,45 @@ class App {
     const sortedReviews = this.reviewManager.sortReviews(sortType);
     const reviewCards = sortedReviews.map((review) => this.reviewManager.createReviewCard(review));
     this.uiManager.displayReviews(reviewCards);
+  }
+
+  /**
+   * 地名検索処理
+   */
+  private async handlePlaceSearch(): Promise<void> {
+    const searchQuery = this.uiManager.getPlaceSearchInput();
+
+    if (!searchQuery) {
+      this.uiManager.showError('検索する地名を入力してください');
+      return;
+    }
+
+    if (!this.placesService) {
+      this.uiManager.showError('PlacesServiceが初期化されていません');
+      return;
+    }
+
+    try {
+      const location = await this.placesService.geocodeAddress(searchQuery);
+
+      if (location) {
+        this.mapService.panTo({ lat: location.lat(), lng: location.lng() }, 15);
+      } else {
+        this.uiManager.showError(`「${searchQuery}」が見つかりませんでした`);
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      this.uiManager.showError('地名検索中にエラーが発生しました');
+    }
+  }
+
+  /**
+   * テーマ切り替え処理
+   */
+  private handleThemeToggle(): void {
+    this.mapService.toggleTheme();
+    const isDarkMode = this.mapService.getIsDarkMode();
+    this.uiManager.updateThemeToggleIcon(isDarkMode);
   }
 }
 

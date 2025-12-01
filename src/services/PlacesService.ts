@@ -6,9 +6,11 @@ import type { PlaceDetailsResult, Review } from '../types';
  */
 export class PlacesService {
   private placesService: google.maps.places.PlacesService;
+  private geocoder: google.maps.Geocoder;
 
   constructor(map: google.maps.Map) {
     this.placesService = new google.maps.places.PlacesService(map);
+    this.geocoder = new google.maps.Geocoder();
   }
 
   /**
@@ -112,6 +114,26 @@ export class PlacesService {
     });
 
     return reviews;
+  }
+
+  /**
+   * 地名から位置情報を検索（ジオコーディング）
+   * @param address - 地名または住所
+   * @returns 位置情報、または null
+   */
+  geocodeAddress(address: string): Promise<google.maps.LatLng | null> {
+    return new Promise((resolve, reject) => {
+      this.geocoder.geocode({ address }, (results, status) => {
+        if (status === google.maps.GeocoderStatus.OK && results && results.length > 0) {
+          const location = results[0].geometry.location;
+          resolve(location);
+        } else if (status === google.maps.GeocoderStatus.ZERO_RESULTS) {
+          resolve(null);
+        } else {
+          reject(new Error(`Geocoding error: ${status}`));
+        }
+      });
+    });
   }
 
   /**
