@@ -243,9 +243,11 @@ body.light-mode #map {
 
 /* ===== コンテンツレイアウト ===== */
 .container {
+    min-height: 100vh;
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .content {
@@ -564,14 +566,23 @@ body.light-mode #map {
     }
 
     .map-section {
+        min-height: 50vh;
         height: 50vh;
         border-right: none;
         border-bottom: 1px solid #2f3336;
+        flex-shrink: 0;
+    }
+
+    #map {
+        flex: 1;
+        min-height: 0;
+        height: 100%;
     }
 
     .timeline-section {
         width: 100%;
         flex: 1;
+        min-height: 0;
     }
 }
 
@@ -587,6 +598,17 @@ body.light-mode #map {
     .description {
         padding: 10px 15px;
         font-size: 13px;
+    }
+
+    /* 地図セクションをモバイルで確実に表示 */
+    .map-section {
+        min-height: 45vh;
+        height: 45vh;
+    }
+
+    #map {
+        min-height: 0;
+        height: 100%;
     }
 
     /* 検索バーをモバイル向けに調整 */
