@@ -33,31 +33,29 @@ document.addEventListener('DOMContentLoaded', () => {
   isDarkMode = savedTheme !== 'light';
   applyTheme();
 
-  // 環境変数からAPIキーを取得（優先）、なければlocalStorageから
+  // 環境変数からAPIキーを取得（環境変数のみ使用）
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
-  if (envApiKey) {
-    apiKey = envApiKey;
-    // 環境変数がある場合は設定ボタンを非表示
-    const settingsBtn = document.getElementById('settingsBtn');
-    if (settingsBtn) {
-      settingsBtn.style.display = 'none';
-    }
-    loadGoogleMapsScript();
-  } else {
-    // 環境変数がない場合はlocalStorageから取得
-    apiKey = localStorage.getItem('googleMapsApiKey') || '';
-
-    if (!apiKey) {
-      showApiKeyModal();
-    } else {
-      loadGoogleMapsScript();
-    }
+  if (!envApiKey) {
+    showError('環境変数 VITE_GOOGLE_MAPS_API_KEY が設定されていません。README.mdを参照してください。');
+    return;
   }
 
+  apiKey = envApiKey;
+
+  // 環境変数がある場合は設定ボタンとモーダルを非表示
+  const settingsBtn = document.getElementById('settingsBtn');
+  const apiKeyModal = document.getElementById('apiKeyModal');
+  if (settingsBtn) {
+    settingsBtn.style.display = 'none';
+  }
+  if (apiKeyModal) {
+    apiKeyModal.style.display = 'none';
+  }
+
+  loadGoogleMapsScript();
+
   // イベントリスナーの設定
-  getElement<HTMLButtonElement>('saveApiKeyBtn').addEventListener('click', saveApiKey);
-  getElement<HTMLButtonElement>('settingsBtn').addEventListener('click', showApiKeyModal);
   getElement<HTMLButtonElement>('searchReviewsBtn').addEventListener('click', searchReviews);
   getElement<HTMLSelectElement>('sortSelect').addEventListener('change', sortAndDisplayReviews);
   getElement<HTMLButtonElement>('placeSearchBtn').addEventListener('click', searchPlace);
@@ -69,44 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
   getElement<HTMLButtonElement>('themeToggleBtn').addEventListener('click', toggleTheme);
 });
 
-// ===== APIキー管理 =====
-function showApiKeyModal(): void {
-  const modal = getElement<HTMLDivElement>('apiKeyModal');
-  const input = getElement<HTMLInputElement>('apiKeyInput');
-  input.value = apiKey || '';
-  modal.classList.add('active');
-}
-
-function saveApiKey(): void {
-  const input = getElement<HTMLInputElement>('apiKeyInput');
-  const key = input.value.trim();
-
-  if (!key) {
-    showError('APIキーを入力してください');
-    return;
-  }
-
-  apiKey = key;
-  localStorage.setItem('googleMapsApiKey', key);
-  getElement<HTMLDivElement>('apiKeyModal').classList.remove('active');
-
-  // 既にスクリプトが読み込まれている場合はリロード
-  if (window.google) {
-    location.reload();
-  } else {
-    loadGoogleMapsScript();
-  }
-}
-
 // ===== Google Maps スクリプト読み込み =====
 function loadGoogleMapsScript(): void {
   // Google Maps APIのエラーハンドラーを設定
   (window as any).gm_authFailure = () => {
     console.error('Google Maps API authentication failed');
     showError(
-      'Google Maps APIの認証に失敗しました。APIキーの設定を確認してください。詳細はコンソールを確認してください。'
+      'Google Maps APIの認証に失敗しました。環境変数 VITE_GOOGLE_MAPS_API_KEY を確認してください。'
     );
-    showApiKeyModal();
   };
 
   const script = document.createElement('script');
@@ -117,7 +85,6 @@ function loadGoogleMapsScript(): void {
     showError(
       'Google Maps APIのスクリプト読み込みに失敗しました。ネットワーク接続を確認してください。'
     );
-    showApiKeyModal();
   };
 
   // グローバルコールバック関数を設定
