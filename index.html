@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Map Reviews Timeline</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- APIキー設定モーダル -->
     <div id="apiKeyModal" class="modal">
@@ -15,7 +17,8 @@
             <input type="text" id="apiKeyInput" placeholder="APIキーを入力してください" />
             <button id="saveApiKeyBtn" class="primary-btn">保存</button>
             <p class="modal-note">
-                APIキーの取得方法は<a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">こちら</a>をご覧ください。<br>
+                APIキーの取得方法は<a href="https://developers.google.com/maps/documentation/javascript/get-api-key"
+                    target="_blank">こちら</a>をご覧ください。<br>
                 必要なAPI: Maps JavaScript API, Places API (New)
             </p>
         </div>
@@ -39,7 +42,7 @@
             <!-- 左側: 地図 -->
             <div class="map-section">
                 <div class="map-search-bar">
-                    <input type="text" id="placeSearchInput" placeholder="地名や住所で検索..." />
+                    <input type="text" id="placeSearchInput" class="search-input" placeholder="地名や住所で検索...">
                     <button id="placeSearchBtn" class="search-btn">🔍 検索</button>
                     <button id="themeToggleBtn" class="icon-btn" title="地図テーマ切り替え">☀️</button>
                 </div>
@@ -81,4 +84,5 @@
 
     <script type="module" src="/src/app.ts"></script>
 </body>
+
 </html>

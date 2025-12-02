@@ -16,6 +16,7 @@ let apiKey: string = '';
 let currentMarker: google.maps.Marker | null = null;
 let markerService: MarkerService | null = null;
 
+
 // ===== DOM要素のヘルパー =====
 function getElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -54,6 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
   getElement<HTMLButtonElement>('settingsBtn').addEventListener('click', showApiKeyModal);
   getElement<HTMLButtonElement>('searchReviewsBtn').addEventListener('click', searchReviews);
   getElement<HTMLSelectElement>('sortSelect').addEventListener('change', sortAndDisplayReviews);
+  getElement<HTMLButtonElement>('placeSearchBtn').addEventListener('click', searchPlace);
+  getElement<HTMLInputElement>('placeSearchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      searchPlace();
+    }
+  });
 });
 
 // ===== APIキー管理 =====
@@ -87,54 +94,115 @@ function saveApiKey(): void {
 
 // ===== Google Maps スクリプト読み込み =====
 function loadGoogleMapsScript(): void {
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry,marker&language=ja`;
-  script.async = true;
-  script.defer = true;
-  script.onload = initMap;
-  script.onerror = () => {
-    showError('Google Maps APIの読み込みに失敗しました。APIキーを確認してください。');
+  // Google Maps APIのエラーハンドラーを設定
+  (window as any).gm_authFailure = () => {
+    console.error('Google Maps API authentication failed');
+    showError(
+      'Google Maps APIの認証に失敗しました。APIキーの設定を確認してください。詳細はコンソールを確認してください。'
+    );
     showApiKeyModal();
   };
+
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry,marker&language=ja&callback=initMapCallback`;
+  script.async = true;
+  script.defer = true;
+  script.onerror = () => {
+    showError(
+      'Google Maps APIのスクリプト読み込みに失敗しました。ネットワーク接続を確認してください。'
+    );
+    showApiKeyModal();
+  };
+
+  // グローバルコールバック関数を設定
+  (window as any).initMapCallback = () => {
+    initMap();
+  };
+
   document.head.appendChild(script);
 }
 
 // ===== 地図初期化 =====
 function initMap(): void {
-  // 東京駅を中心に初期化
-  const defaultCenter = { lat: 35.6812, lng: 139.7671 };
+  try {
+    // 東京駅を中心に初期化
+    const defaultCenter = { lat: 35.6812, lng: 139.7671 };
 
-  map = new google.maps.Map(getElement<HTMLDivElement>('map'), {
-    center: defaultCenter,
-    zoom: 15,
-    mapId: 'DEMO_MAP_ID', // Advanced Markerに必要
-    styles: [
-      {
-        featureType: 'all',
-        elementType: 'geometry',
-        stylers: [{ color: '#242f3e' }],
-      },
-      {
-        featureType: 'all',
-        elementType: 'labels.text.stroke',
-        stylers: [{ color: '#242f3e' }],
-      },
-      {
-        featureType: 'all',
-        elementType: 'labels.text.fill',
-        stylers: [{ color: '#746855' }],
-      },
-      {
-        featureType: 'water',
-        elementType: 'geometry',
-        stylers: [{ color: '#17263c' }],
-      },
-    ],
-  });
+    map = new google.maps.Map(getElement<HTMLDivElement>('map'), {
+      center: defaultCenter,
+      zoom: 15,
+      mapId: 'DEMO_MAP_ID', // Advanced Markerに必要
+      // mapIdを使用する場合、stylesはCloud Consoleで管理されるため削除
+    });
 
-  // MarkerServiceを初期化
-  markerService = new MarkerService();
-  markerService.setMap(map);
+    // MarkerServiceを初期化
+    markerService = new MarkerService();
+    markerService.setMap(map);
+
+    // Autocompleteを初期化
+    initAutocomplete();
+
+    console.log('Google Maps initialized successfully');
+  } catch (error) {
+    console.error('Map initialization error:', error);
+    showError('地図の初期化に失敗しました。APIキーの設定を確認してください。');
+    showApiKeyModal();
+  }
+}
+
+// ===== Autocomplete初期化 =====
+// ===== Autocomplete初期化 (廃止: テキスト検索のみ使用) =====
+function initAutocomplete(): void {
+  // テキスト検索のみを使用するため、Autocompleteの初期化は不要
+  console.log('Using text-only search');
+}
+
+// ===== 場所検索 =====
+async function searchPlace(): Promise<void> {
+  if (!map) {
+    showError('地図が初期化されていません');
+    return;
+  }
+
+  const input = document.getElementById('placeSearchInput') as HTMLInputElement;
+  const query = input?.value.trim();
+
+  if (!query) {
+    showError('検索する場所を入力してください');
+    return;
+  }
+
+  try {
+    // Text Search (New) を使用
+    // @ts-ignore: Types might be missing for newer APIs
+    const { places } = await google.maps.places.Place.searchByText({
+      textQuery: query,
+      fields: ['displayName', 'formattedAddress', 'location'],
+      maxResultCount: 1,
+    });
+
+    if (places && places.length > 0) {
+      const place = places[0];
+      const location = place.location;
+      const placeName = place.displayName || place.formattedAddress || '';
+
+      if (location) {
+        // 地図を移動
+        map.setCenter(location);
+        map.setZoom(15);
+
+        // マーカーを表示
+        showPlaceMarker(location, placeName);
+      } else {
+        showError('場所の位置情報が見つかりませんでした');
+      }
+    } else {
+      showError('場所が見つかりませんでした');
+    }
+  } catch (error) {
+    console.error('Search error:', error);
+    showError('場所の検索中にエラーが発生しました');
+  }
 }
 
 // ===== クチコミ検索 =====
