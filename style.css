@@ -10,6 +10,106 @@ body {
     background-color: #000000;
     color: #e7e9ea;
     line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* ===== ライトモード ===== */
+body.light-mode {
+    background-color: #ffffff;
+    color: #0f1419;
+}
+
+body.light-mode .header,
+body.light-mode .description,
+body.light-mode .timeline-header,
+body.light-mode .map-search-bar,
+body.light-mode .map-controls {
+    background-color: #ffffff;
+    border-color: #eff3f4;
+}
+
+body.light-mode .header h1,
+body.light-mode .author-name,
+body.light-mode .review-text {
+    color: #0f1419;
+}
+
+body.light-mode .description,
+body.light-mode .post-time,
+body.light-mode .sort-controls {
+    color: #536471;
+}
+
+body.light-mode .modal {
+    background-color: rgba(91, 112, 131, 0.4);
+}
+
+body.light-mode .modal-content {
+    background-color: #ffffff;
+}
+
+body.light-mode .modal-content h2 {
+    color: #0f1419;
+}
+
+body.light-mode .modal-content p,
+body.light-mode .modal-note {
+    color: #536471;
+}
+
+body.light-mode .modal-content input {
+    background-color: #f7f9f9;
+    border-color: #cfd9de;
+    color: #0f1419;
+}
+
+body.light-mode .map-search-bar input {
+    background-color: #eff3f4;
+    border-color: #cfd9de;
+    color: #0f1419;
+}
+
+body.light-mode .sort-controls select {
+    background-color: #eff3f4;
+    border-color: #cfd9de;
+    color: #0f1419;
+}
+
+body.light-mode .timeline {
+    background-color: #ffffff;
+}
+
+body.light-mode .review-card {
+    background-color: #ffffff;
+    border-color: #eff3f4;
+}
+
+body.light-mode .review-card:hover {
+    background-color: #f7f9f9;
+}
+
+body.light-mode .review-card.highlight {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+body.light-mode .empty-state {
+    color: #536471;
+}
+
+body.light-mode .timeline::-webkit-scrollbar-track {
+    background: #ffffff;
+}
+
+body.light-mode .timeline::-webkit-scrollbar-thumb {
+    background: #cfd9de;
+}
+
+body.light-mode .timeline::-webkit-scrollbar-thumb:hover {
+    background: #b4bec7;
+}
+
+body.light-mode #map {
+    background-color: #f7f9f9;
 }
 
 /* ===== モーダル ===== */
@@ -143,9 +243,11 @@ body {
 
 /* ===== コンテンツレイアウト ===== */
 .container {
+    min-height: 100vh;
     height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .content {
@@ -349,37 +451,49 @@ body {
 
 .review-header {
     display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: baseline;
 }
 
 .avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #2f3336;
+    display: none;
 }
 
 .review-meta {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
 }
 
 .author-name {
     font-weight: 700;
     font-size: 15px;
     color: #e7e9ea;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
 .post-time {
     font-size: 14px;
     color: #71767b;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.post-time::before {
+    content: '· ';
+    color: #71767b;
 }
 
 .review-body {
-    margin-left: 60px;
+    margin-left: 0;
 }
 
 .place-info {
@@ -452,33 +566,178 @@ body {
     }
 
     .map-section {
+        min-height: 50vh;
         height: 50vh;
         border-right: none;
         border-bottom: 1px solid #2f3336;
+        flex-shrink: 0;
+    }
+
+    #map {
+        flex: 1;
+        min-height: 0;
+        height: 100%;
     }
 
     .timeline-section {
         width: 100%;
         flex: 1;
+        min-height: 0;
     }
 }
 
 @media (max-width: 640px) {
+    .header {
+        padding: 12px 15px;
+    }
+
     .header h1 {
         font-size: 16px;
     }
 
+    .description {
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    /* 地図セクションをモバイルで確実に表示 */
+    .map-section {
+        min-height: 45vh;
+        height: 45vh;
+    }
+
+    #map {
+        min-height: 0;
+        height: 100%;
+    }
+
+    /* 検索バーをモバイル向けに調整 */
+    .map-search-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .map-search-bar input {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .search-btn {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+
+    .icon-btn {
+        font-size: 18px;
+        padding: 10px;
+        flex-shrink: 0;
+    }
+
+    /* タイムラインヘッダー */
     .timeline-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
+        padding: 12px 15px;
+    }
+
+    .timeline-header h2 {
+        font-size: 16px;
     }
 
     .timeline-section {
         width: 100%;
     }
 
+    /* クチコミカード */
+    .review-card {
+        padding: 12px 15px;
+    }
+
     .review-body {
         margin-left: 0;
+    }
+
+    .review-header {
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .avatar {
+        display: none;
+    }
+
+    .review-meta {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .author-name {
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-shrink: 1;
+        min-width: 0;
+    }
+
+    .post-time {
+        font-size: 13px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .post-time::before {
+        content: '· ';
+    }
+
+    .place-info {
+        font-size: 13px;
+    }
+
+    .rating {
+        font-size: 14px;
+    }
+
+    .review-text {
+        font-size: 14px;
+    }
+
+    /* 地図コントロール */
+    .map-controls {
+        padding: 12px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .primary-btn {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+
+    /* モーダル */
+    .modal-content {
+        padding: 20px;
+        width: 95%;
+    }
+
+    .modal-content h2 {
+        font-size: 18px;
+    }
+
+    /* トースト */
+    .toast {
+        bottom: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
     }
 }

@@ -15,7 +15,7 @@ let allReviews: Review[] = [];
 let apiKey: string = '';
 let currentMarker: google.maps.Marker | null = null;
 let markerService: MarkerService | null = null;
-
+let isDarkMode: boolean = true; // デフォルトはダークモード
 
 // ===== DOM要素のヘルパー =====
 function getElement<T extends HTMLElement>(id: string): T {
@@ -28,6 +28,11 @@ function getElement<T extends HTMLElement>(id: string): T {
 
 // ===== 初期化 =====
 document.addEventListener('DOMContentLoaded', () => {
+  // テーマの初期化（localStorageから取得、デフォルトはダーク）
+  const savedTheme = localStorage.getItem('theme');
+  isDarkMode = savedTheme !== 'light';
+  applyTheme();
+
   // 環境変数からAPIキーを取得（優先）、なければlocalStorageから
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -61,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       searchPlace();
     }
   });
+  getElement<HTMLButtonElement>('themeToggleBtn').addEventListener('click', toggleTheme);
 });
 
 // ===== APIキー管理 =====
@@ -174,7 +180,6 @@ async function searchPlace(): Promise<void> {
 
   try {
     // Text Search (New) を使用
-    // @ts-ignore: Types might be missing for newer APIs
     const { places } = await google.maps.places.Place.searchByText({
       textQuery: query,
       fields: ['displayName', 'formattedAddress', 'location'],
@@ -587,4 +592,28 @@ function showError(message: string): void {
   setTimeout(() => {
     toast.style.display = 'none';
   }, 5000);
+}
+
+// ===== テーマ切り替え =====
+function toggleTheme(): void {
+  isDarkMode = !isDarkMode;
+  localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+  applyTheme();
+}
+
+function applyTheme(): void {
+  const body = document.body;
+  const themeToggleBtn = getElement<HTMLButtonElement>('themeToggleBtn');
+
+  if (isDarkMode) {
+    body.classList.remove('light-mode');
+    body.classList.add('dark-mode');
+    themeToggleBtn.textContent = '🌙';
+    themeToggleBtn.title = 'ライトモードに切り替え';
+  } else {
+    body.classList.remove('dark-mode');
+    body.classList.add('light-mode');
+    themeToggleBtn.textContent = '☀️';
+    themeToggleBtn.title = 'ダークモードに切り替え';
+  }
 }

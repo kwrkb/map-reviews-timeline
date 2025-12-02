@@ -12,9 +12,12 @@ Google Mapsで表示している範囲内のスポットの口コミを、X（�
 
 - 🗺️ **インタラクティブな地図**: Google Maps上で自由に範囲を選択
 - ⚡ **高速な口コミ取得**: Promise.allSettledによる並列処理で最大20スポットを高速取得
-- 📝 **タイムライン表示**: X風のダークテーマUIで口コミを見やすく表示
+- 📝 **タイムライン表示**: X風のUIで口コミを見やすく表示
+- 🌓 **ライト/ダークモード**: ワンクリックでテーマを切り替え可能
+- 📱 **完全レスポンシブ対応**: スマートフォン・タブレット・PCで最適表示
 - 🔄 **柔軟なソート**: 新しい順/古い順/高評価順/低評価順で並び替え
 - 🔍 **地名検索**: 地名や住所で素早く目的地にジャンプ
+- 📍 **マーカー連携**: 地図上のマーカーをクリックして該当の口コミにジャンプ
 - 🏗️ **モダンなアーキテクチャ**: TypeScript + Viteによる高速開発環境
 - 🦀 **高速リント**: Biome（Rust製）による爆速コード品質チェック
 
@@ -256,9 +259,12 @@ A web application that displays reviews of spots within the visible Google Maps 
 
 - 🗺️ **Interactive Map**: Freely select areas on Google Maps
 - ⚡ **Fast Review Fetching**: High-speed parallel processing with Promise.allSettled for up to 20 spots
-- 📝 **Timeline Display**: Easy-to-read reviews in X-style dark theme UI
+- 📝 **Timeline Display**: Easy-to-read reviews in X-style UI
+- 🌓 **Light/Dark Mode**: Toggle theme with one click
+- 📱 **Fully Responsive**: Optimized display for smartphones, tablets, and PCs
 - 🔄 **Flexible Sorting**: Sort by newest/oldest/highest rating/lowest rating
 - 🔍 **Place Search**: Quickly jump to destinations by place name or address
+- 📍 **Marker Integration**: Click map markers to jump to corresponding reviews
 - 🏗️ **Modern Architecture**: Fast development environment with TypeScript + Vite
 - 🦀 **Fast Linting**: Lightning-fast code quality checks with Biome (Rust-based)
 

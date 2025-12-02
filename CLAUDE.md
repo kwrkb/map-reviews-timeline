@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Map Reviews Timeline is a web application that displays Google Maps reviews in an X (Twitter)-style timeline UI. Users can select a map area and fetch reviews from nearby places, displaying them in a sortable timeline interface with interactive map markers.
 
+**Key Features:**
+- Light/Dark mode theme switching with localStorage persistence
+- Fully responsive design (mobile, tablet, desktop)
+- Interactive markers with scroll-to-review functionality
+- Place search with Text Search API (New)
+- Compact review cards without avatars for efficient display
+
 **Key Technologies:**
 - TypeScript + Vite (fast HMR development)
 - Google Maps JavaScript API + Places API (New)
@@ -177,6 +184,40 @@ The New Places API has different field names than legacy:
 - Searches by text query (地名や住所)
 - Retrieves first result and centers map on location
 - Uses `maxResultCount: 1` to limit API costs
+
+## UI/UX Design Patterns
+
+### Theme Switching
+
+- **Light/Dark Mode Toggle**: Sun (☀️) and Moon (🌙) emoji button in map search bar
+- **Theme Persistence**: Saved to localStorage as 'theme' key ('dark' or 'light')
+- **CSS Implementation**: Body classes `.dark-mode` and `.light-mode`
+- **Color Scheme**:
+  - Dark: Black backgrounds (#000000, #16181c), light text (#e7e9ea)
+  - Light: White backgrounds (#ffffff, #f7f9f9), dark text (#0f1419)
+- **Default**: Dark mode (matches X/Twitter style)
+
+### Responsive Design
+
+- **Breakpoints**:
+  - Desktop: Default (full width)
+  - Tablet: ≤1024px (map 50vh, vertical split)
+  - Mobile: ≤640px (map 45vh, compact layout)
+- **Mobile Optimizations**:
+  - Search bar wraps on small screens
+  - Buttons full-width on mobile
+  - Font sizes reduced (14px → 13-14px)
+  - Map controls stack vertically
+  - Compact review cards without avatars
+
+### Review Card Design
+
+- **No Avatars**: Display name and time only (compact layout)
+- **Inline Metadata**: "Name · Time" format with middle dot separator
+- **Text Overflow**: Long names ellipsized (`text-overflow: ellipsis`)
+- **Click Actions**:
+  - Place name → Pan map to location
+  - Card highlight on marker click
 
 ## Terminology Standards
 
