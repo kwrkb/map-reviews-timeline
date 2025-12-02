@@ -19,9 +19,9 @@ interface PlaceDetailsResult {
 
 // ===== グローバル変数 =====
 let map: google.maps.Map | null = null;
-let placesService: google.maps.places.PlacesService | null = null;
 let allReviews: Review[] = [];
 let apiKey: string = '';
+let currentMarker: google.maps.Marker | null = null;
 
 // ===== DOM要素のヘルパー =====
 function getElement<T extends HTMLElement>(id: string): T {
@@ -137,8 +137,6 @@ function initMap(): void {
       },
     ],
   });
-
-  placesService = new google.maps.places.PlacesService(map);
 }
 
 // ===== 口コミ検索 =====
@@ -216,30 +214,27 @@ async function searchReviews(): Promise<void> {
 }
 
 // ===== Nearby Places検索 =====
-function searchNearbyPlaces(bounds: google.maps.LatLngBounds): Promise<google.maps.places.PlaceResult[]> {
-  return new Promise((resolve, reject) => {
-    if (!placesService) {
-      reject(new Error('PlacesService not initialized'));
-      return;
-    }
+async function searchNearbyPlaces(bounds: google.maps.LatLngBounds): Promise<google.maps.places.PlaceResult[]> {
+  if (!map) {
+    throw new Error('Map not initialized');
+  }
 
-    const center = bounds.getCenter();
+  const center = bounds.getCenter();
+  const radius = calculateRadius(bounds);
 
-    const request: google.maps.places.PlaceSearchRequest = {
-      location: center,
-      radius: calculateRadius(bounds),
-    };
-
-    placesService.nearbySearch(request, (results, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        resolve(results);
-      } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        resolve([]);
-      } else {
-        reject(new Error(`Places API error: ${status}`));
-      }
-    });
+  const { places } = await google.maps.places.Place.searchNearby({
+    locationRestriction: {
+      center: { lat: center.lat(), lng: center.lng() },
+      radius: radius,
+    },
+    maxResultCount: 20,
+    fields: ['id', 'displayName'],
   });
+
+  return places.map((place) => ({
+    place_id: place.id,
+    name: place.displayName,
+  })) as google.maps.places.PlaceResult[];
 }
 
 // ===== 境界から半径を計算 =====
@@ -255,33 +250,39 @@ function calculateRadius(bounds: google.maps.LatLngBounds): number {
 }
 
 // ===== Place Details取得 =====
-function getPlaceDetails(placeId: string): Promise<PlaceDetailsResult | null> {
-  return new Promise((resolve, reject) => {
-    if (!placesService) {
-      reject(new Error('PlacesService not initialized'));
-      return;
-    }
-
-    const request: google.maps.places.PlaceDetailsRequest = {
-      placeId: placeId,
-      fields: ['name', 'reviews', 'types', 'geometry'],
-    };
-
-    placesService.getDetails(request, (place, status) => {
-      if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-        resolve({
-          name: place.name || '',
-          reviews: place.reviews,
-          types: place.types,
-          geometry: place.geometry,
-        });
-      } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-        resolve(null);
-      } else {
-        reject(new Error(`Place Details API error: ${status}`));
-      }
+async function getPlaceDetails(placeId: string): Promise<PlaceDetailsResult | null> {
+  try {
+    const place = new google.maps.places.Place({
+      id: placeId,
     });
-  });
+
+    await place.fetchFields({
+      fields: ['displayName', 'reviews', 'types', 'location'],
+    });
+
+    // レビューをPlaceReview型に変換
+    const reviews: google.maps.places.PlaceReview[] = (place.reviews || []).map((review) => ({
+      author_name: review.authorAttribution?.displayName || '匿名',
+      profile_photo_url: review.authorAttribution?.photoURI || '',
+      rating: review.rating || 0,
+      text: (review.text as any)?.text || review.text || '',
+      time: review.publishTime ? new Date(review.publishTime).getTime() / 1000 : 0,
+      language: '',
+      relative_time_description: '',
+    }));
+
+    return {
+      name: place.displayName || '',
+      reviews: reviews,
+      types: place.types || [],
+      geometry: {
+        location: place.location,
+      } as google.maps.places.PlaceGeometry,
+    };
+  } catch (error) {
+    console.error('Error fetching place details:', error);
+    return null;
+  }
 }
 
 // ===== ソートと表示 =====
@@ -356,13 +357,51 @@ function createReviewCard(review: Review): HTMLElement {
       </div>
     </div>
     <div class="review-body">
-      <div class="place-info">📍 ${escapeHtml(review.placeName || '')}${category ? ' · ' + category : ''}</div>
+      <div class="place-info clickable">📍 ${escapeHtml(review.placeName || '')}${category ? ' · ' + category : ''}</div>
       <div class="rating">${stars}</div>
       <p class="review-text">${escapeHtml(review.text)}</p>
     </div>
   `;
 
+  // 場所名クリック時に地図を移動
+  if (review.placeLocation) {
+    const placeInfo = article.querySelector('.place-info');
+    if (placeInfo) {
+      placeInfo.addEventListener('click', () => {
+        if (map && review.placeLocation) {
+          map.panTo(review.placeLocation);
+          map.setZoom(17);
+
+          // マーカーを表示（既存のマーカーがあれば削除）
+          showPlaceMarker(review.placeLocation, review.placeName || '');
+        }
+      });
+    }
+  }
+
   return article;
+}
+
+// ===== 場所のマーカーを表示 =====
+function showPlaceMarker(location: google.maps.LatLng, placeName: string): void {
+  // 既存のマーカーがあれば削除
+  if (currentMarker) {
+    currentMarker.setMap(null);
+  }
+
+  // 新しいマーカーを作成
+  currentMarker = new google.maps.Marker({
+    position: location,
+    map: map,
+    title: placeName,
+    animation: google.maps.Animation.DROP,
+  });
+
+  // 情報ウィンドウを表示
+  const infoWindow = new google.maps.InfoWindow({
+    content: `<div style="color: #000; font-weight: bold;">${escapeHtml(placeName)}</div>`,
+  });
+  infoWindow.open(map, currentMarker);
 }
 
 // ===== 相対時間の計算 =====
