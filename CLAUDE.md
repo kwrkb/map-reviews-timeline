@@ -65,24 +65,26 @@ export VITE_GOOGLE_MAPS_API_KEY="your_key"
 
 ### Service Layer Pattern
 
-The codebase uses a **service-based architecture** where concerns are separated into distinct layers:
+The codebase uses a **service-based architecture** with most orchestration in `app.ts`:
 
 ```
 ┌─────────────┐
-│   app.ts    │  Entry point - orchestrates services and managers
+│   app.ts    │  Entry point - handles most UI logic and orchestration
 └──────┬──────┘
        │
-       ├─────────────────────────────────────────┐
-       │                                         │
-   ┌───▼────────┐                          ┌────▼──────────┐
-   │  Services  │  API/External Integration │   Managers    │  UI/State Management
-   └────────────┘                           └───────────────┘
-       │                                         │
-       ├── MapService         Maps init/theme   ├── UIManager        DOM/Events
-       ├── PlacesService      Places API (New)  └── ReviewManager    Sort/Display
-       ├── MarkerService      Advanced Markers
-       └── StorageService     LocalStorage
+       ├──────────────────────┐
+       │                      │
+   ┌───▼────────┐        ┌────▼──────────┐
+   │  Services  │        │   Managers    │  (Available but currently unused)
+   └────────────┘        └───────────────┘
+       │                      │
+       ├── PlacesService      ├── UIManager        (DOM references)
+       ├── MarkerService      └── ReviewManager    (Sorting logic)
+       ├── MapService
+       └── StorageService     (Available but unused)
 ```
+
+**Note:** While the architecture supports service/manager separation, the current implementation centralizes most logic in `app.ts` for simplicity. Managers and some services exist but are not actively used.
 
 ### Key Architectural Decisions
 
@@ -257,13 +259,21 @@ If HMR isn't working in WSL2, these settings should fix it.
 ### Service vs Manager Separation
 
 - **Services** (`src/services/`): API calls, external integrations, data processing
+  - `MapService`: Map initialization and theme (currently minimal, most logic in app.ts)
+  - `PlacesService`: Places API (New) integration - nearby search, details, text search
+  - `MarkerService`: Advanced Markers creation, clustering, click handling
+  - `StorageService`: localStorage wrapper (available but currently unused)
 - **Managers** (`src/managers/`): DOM manipulation, UI state, event handling
-- Keep business logic in services, keep UI concerns in managers
-- All instantiated and orchestrated in `app.ts`
+  - `UIManager`: DOM element references and UI state (available but currently unused)
+  - `ReviewManager`: Review sorting and display logic (available but currently unused)
+- **Current Architecture**: Most logic is in `app.ts` for simplicity
+  - Services are instantiated but managers are not currently used
+  - Direct DOM manipulation in `app.ts` rather than through UIManager
+  - Future refactor could consolidate into managers for better separation
 
 ### Review Display
 
-Review rendering currently happens in `app.ts` → `createReviewCard()`. The `ReviewManager` has an unused `createReviewCard()` method that could be used for consolidation.
+Review rendering happens in `app.ts` → `createReviewCard()` function. The `ReviewManager` has an unused `createReviewCard()` method that could be used for consolidation in future refactoring.
 
 ### Error Handling
 
