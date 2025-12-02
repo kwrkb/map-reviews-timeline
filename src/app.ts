@@ -173,9 +173,11 @@ async function searchReviews(): Promise<void> {
 
     for (let i = 0; i < totalPlaces; i++) {
       try {
-        const placeDetails = await getPlaceDetails(places[i].place_id!);
+        const placeId = places[i].place_id;
+        if (!placeId) continue;
+        const placeDetails = await getPlaceDetails(placeId);
 
-        if (placeDetails && placeDetails.reviews && placeDetails.reviews.length > 0) {
+        if (placeDetails?.reviews && placeDetails.reviews.length > 0) {
           // 口コミをallReviewsに追加
           placeDetails.reviews.forEach((review) => {
             allReviews.push({
@@ -214,7 +216,9 @@ async function searchReviews(): Promise<void> {
 }
 
 // ===== Nearby Places検索 =====
-async function searchNearbyPlaces(bounds: google.maps.LatLngBounds): Promise<google.maps.places.PlaceResult[]> {
+async function searchNearbyPlaces(
+  bounds: google.maps.LatLngBounds
+): Promise<google.maps.places.PlaceResult[]> {
   if (!map) {
     throw new Error('Map not initialized');
   }
@@ -265,6 +269,7 @@ async function getPlaceDetails(placeId: string): Promise<PlaceDetailsResult | nu
       author_name: review.authorAttribution?.displayName || '匿名',
       profile_photo_url: review.authorAttribution?.photoURI || '',
       rating: review.rating || 0,
+      // biome-ignore lint/suspicious/noExplicitAny: New Places API review.text may be an object with text property
       text: (review.text as any)?.text || review.text || '',
       time: review.publishTime ? new Date(review.publishTime).getTime() / 1000 : 0,
       language: '',
@@ -357,7 +362,7 @@ function createReviewCard(review: Review): HTMLElement {
       </div>
     </div>
     <div class="review-body">
-      <div class="place-info clickable">📍 ${escapeHtml(review.placeName || '')}${category ? ' · ' + category : ''}</div>
+      <div class="place-info clickable">📍 ${escapeHtml(review.placeName || '')}${category ? ` · ${category}` : ''}</div>
       <div class="rating">${stars}</div>
       <p class="review-text">${escapeHtml(review.text)}</p>
     </div>
