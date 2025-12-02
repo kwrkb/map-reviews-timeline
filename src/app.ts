@@ -345,7 +345,8 @@ function createReviewCard(review: Review): HTMLElement {
   const article = document.createElement('article');
   article.className = 'review-card';
   // 一意のIDを生成（場所名 + 投稿時間のハッシュ）
-  const reviewId = `review-${btoa(`${review.placeName}-${review.time}`).replace(/=/g, '')}`;
+  // 日本語対応のため、encodeURIComponent → btoa でエンコード
+  const reviewId = `review-${btoa(encodeURIComponent(`${review.placeName}-${review.time}`)).replace(/=/g, '')}`;
   article.id = reviewId;
   article.dataset.reviewTime = review.time.toString();
 
@@ -421,7 +422,8 @@ function showPlaceMarker(location: google.maps.LatLng, placeName: string): void 
 
 // ===== クチコミカードにスクロール =====
 function scrollToReviewCard(review: Review): void {
-  const reviewId = `review-${btoa(`${review.placeName}-${review.time}`).replace(/=/g, '')}`;
+  // 日本語対応のため、encodeURIComponent → btoa でエンコード
+  const reviewId = `review-${btoa(encodeURIComponent(`${review.placeName}-${review.time}`)).replace(/=/g, '')}`;
   const card = document.getElementById(reviewId);
 
   if (card) {
