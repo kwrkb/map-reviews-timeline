@@ -70,14 +70,16 @@ npm install
 
 #### 3-2. 必要なAPIを有効化
 
-以下の2つのAPIを**必ず**有効化してください：
+以下のAPIを**必ず**有効化してください：
 
-- ✅ **Maps JavaScript API**
-- ✅ **Places API (New)**
+- ✅ **Maps JavaScript API** - 地図表示・操作
+- ✅ **Places API (New)** - スポット検索・クチコミ取得（Legacy版ではなくNew版）
+
+**注意:** Geometry Library（距離計算）は Maps JavaScript API に自動的に含まれているため、個別の有効化は不要です。
 
 有効化手順：
 1. Google Cloud Consoleで「APIとサービス」>「ライブラリ」を開く
-2. 上記のAPIを検索して有効化
+2. 上記2つのAPIを検索して有効化
 
 #### 3-3. APIキーを作成
 
@@ -88,6 +90,7 @@ npm install
 **セキュリティのため、APIキーに制限を設定することを推奨：**
 - **アプリケーションの制限**: HTTPリファラー（Webサイト）
 - **APIの制限**: Maps JavaScript API、Places API (New)
+  - 注意: Geometry Library は Maps JavaScript API に含まれているため、個別の制限設定は不要
 
 ### 4. 環境変数の設定
 
@@ -311,14 +314,16 @@ npm install
 
 ##### 3-2. Enable Required APIs
 
-**Must** enable the following 2 APIs:
+**Must** enable the following APIs:
 
-- ✅ **Maps JavaScript API**
-- ✅ **Places API (New)**
+- ✅ **Maps JavaScript API** - Map display and manipulation
+- ✅ **Places API (New)** - Place search and reviews (NOT the legacy Places API)
+
+**Note:** Geometry Library is automatically included in the Maps JavaScript API - no separate activation required.
 
 Enabling steps:
 1. Open "APIs & Services" > "Library" in Google Cloud Console
-2. Search for and enable the above APIs
+2. Search for and enable the above 2 APIs
 
 ##### 3-3. Create an API Key
 
@@ -329,6 +334,7 @@ Enabling steps:
 **Recommended to set restrictions on the API key for security:**
 - **Application restrictions**: HTTP referrers (websites)
 - **API restrictions**: Maps JavaScript API, Places API (New)
+  - Note: Geometry Library is included in Maps JavaScript API - no separate restriction needed
 
 #### 4. Environment Variable Configuration
 
