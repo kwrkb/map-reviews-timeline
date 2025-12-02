@@ -1,15 +1,7 @@
-// ===== 型定義 =====
-interface Review {
-  author_name: string;
-  profile_photo_url?: string;
-  rating: number;
-  text: string;
-  time: number;
-  placeName?: string;
-  placeTypes?: string[];
-  placeLocation?: google.maps.LatLng;
-}
+import { MarkerService } from './services/MarkerService';
+import type { Review } from './types';
 
+// ===== 型定義 =====
 interface PlaceDetailsResult {
   name: string;
   reviews?: google.maps.places.PlaceReview[];
@@ -22,6 +14,7 @@ let map: google.maps.Map | null = null;
 let allReviews: Review[] = [];
 let apiKey: string = '';
 let currentMarker: google.maps.Marker | null = null;
+let markerService: MarkerService | null = null;
 
 // ===== DOM要素のヘルパー =====
 function getElement<T extends HTMLElement>(id: string): T {
@@ -95,7 +88,7 @@ function saveApiKey(): void {
 // ===== Google Maps スクリプト読み込み =====
 function loadGoogleMapsScript(): void {
   const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry&language=ja`;
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry,marker&language=ja`;
   script.async = true;
   script.defer = true;
   script.onload = initMap;
@@ -114,6 +107,7 @@ function initMap(): void {
   map = new google.maps.Map(getElement<HTMLDivElement>('map'), {
     center: defaultCenter,
     zoom: 15,
+    mapId: 'DEMO_MAP_ID', // Advanced Markerに必要
     styles: [
       {
         featureType: 'all',
@@ -137,9 +131,13 @@ function initMap(): void {
       },
     ],
   });
+
+  // MarkerServiceを初期化
+  markerService = new MarkerService();
+  markerService.setMap(map);
 }
 
-// ===== 口コミ検索 =====
+// ===== クチコミ検索 =====
 async function searchReviews(): Promise<void> {
   if (!map) {
     showError('地図が初期化されていません');
@@ -167,7 +165,7 @@ async function searchReviews(): Promise<void> {
       return;
     }
 
-    // 各スポットの詳細（口コミ含む）を取得
+    // 各スポットの詳細（クチコミ含む）を取得
     let fetchedCount = 0;
     const totalPlaces = Math.min(places.length, 20); // 最大20スポットに制限
 
@@ -178,7 +176,7 @@ async function searchReviews(): Promise<void> {
         const placeDetails = await getPlaceDetails(placeId);
 
         if (placeDetails?.reviews && placeDetails.reviews.length > 0) {
-          // 口コミをallReviewsに追加
+          // クチコミをallReviewsに追加
           placeDetails.reviews.forEach((review) => {
             allReviews.push({
               author_name: review.author_name || '匿名',
@@ -196,20 +194,28 @@ async function searchReviews(): Promise<void> {
         fetchedCount++;
 
         // 進捗を表示
-        updateLoadingText(`口コミを取得中... (${fetchedCount}/${totalPlaces})`);
+        updateLoadingText(`クチコミを取得中... (${fetchedCount}/${totalPlaces})`);
       } catch (error) {
         console.error('Place details error:', error);
       }
     }
 
     if (allReviews.length === 0) {
-      showError('口コミが見つかりませんでした');
+      showError('クチコミが見つかりませんでした');
     } else {
       sortAndDisplayReviews();
+
+      // マーカーを作成
+      if (markerService) {
+        await markerService.createMarkersFromReviews(allReviews, (review) => {
+          // マーカークリック時に該当するクチコミカードにスクロール
+          scrollToReviewCard(review);
+        });
+      }
     }
   } catch (error) {
     console.error('Search error:', error);
-    showError('口コミの取得中にエラーが発生しました');
+    showError('クチコミの取得中にエラーが発生しました');
   } finally {
     setLoading(false);
   }
@@ -313,14 +319,14 @@ function sortAndDisplayReviews(): void {
   displayReviews(sorted);
 }
 
-// ===== 口コミ表示 =====
+// ===== クチコミ表示 =====
 function displayReviews(reviews: Review[]): void {
   const timeline = getElement<HTMLDivElement>('timeline');
 
   if (reviews.length === 0) {
     timeline.innerHTML = `
       <div class="empty-state">
-        <p>「この範囲の口コミを取得」ボタンを押して、<br>地図範囲内のスポットの口コミを表示します。</p>
+        <p>「この範囲のクチコミを取得」ボタンを押して、<br>地図範囲内のスポットのクチコミを表示します。</p>
       </div>
     `;
     return;
@@ -334,10 +340,14 @@ function displayReviews(reviews: Review[]): void {
   });
 }
 
-// ===== 口コミカード作成 =====
+// ===== クチコミカード作成 =====
 function createReviewCard(review: Review): HTMLElement {
   const article = document.createElement('article');
   article.className = 'review-card';
+  // 一意のIDを生成（場所名 + 投稿時間のハッシュ）
+  const reviewId = `review-${btoa(`${review.placeName}-${review.time}`).replace(/=/g, '')}`;
+  article.id = reviewId;
+  article.dataset.reviewTime = review.time.toString();
 
   // 星評価の生成
   const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
@@ -407,6 +417,23 @@ function showPlaceMarker(location: google.maps.LatLng, placeName: string): void 
     content: `<div style="color: #000; font-weight: bold;">${escapeHtml(placeName)}</div>`,
   });
   infoWindow.open(map, currentMarker);
+}
+
+// ===== クチコミカードにスクロール =====
+function scrollToReviewCard(review: Review): void {
+  const reviewId = `review-${btoa(`${review.placeName}-${review.time}`).replace(/=/g, '')}`;
+  const card = document.getElementById(reviewId);
+
+  if (card) {
+    // スムーズスクロール
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // ハイライト効果
+    card.classList.add('highlight');
+    setTimeout(() => {
+      card.classList.remove('highlight');
+    }, 2000);
+  }
 }
 
 // ===== 相対時間の計算 =====
