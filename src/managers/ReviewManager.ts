@@ -3,38 +3,38 @@ import { escapeHtml, generateStars, getCategoryName, getRelativeTime } from '../
 
 /**
  * ReviewManager
- * 口コミのソート・表示・カード生成を担当
+ * クチコミのソート・表示・カード生成を担当
  */
 export class ReviewManager {
   private reviews: Review[] = [];
 
   /**
-   * 口コミを設定
-   * @param reviews - 口コミの配列
+   * クチコミを設定
+   * @param reviews - クチコミの配列
    */
   setReviews(reviews: Review[]): void {
     this.reviews = reviews;
   }
 
   /**
-   * 口コミを取得
-   * @returns 口コミの配列
+   * クチコミを取得
+   * @returns クチコミの配列
    */
   getReviews(): Review[] {
     return this.reviews;
   }
 
   /**
-   * 口コミをクリア
+   * クチコミをクリア
    */
   clearReviews(): void {
     this.reviews = [];
   }
 
   /**
-   * 口コミをソート
+   * クチコミをソート
    * @param sortType - ソートタイプ（newest, oldest, highest, lowest）
-   * @returns ソートされた口コミの配列
+   * @returns ソートされたクチコミの配列
    */
   sortReviews(sortType: string): Review[] {
     const sorted = [...this.reviews];
@@ -58,8 +58,8 @@ export class ReviewManager {
   }
 
   /**
-   * 口コミカードのHTML要素を生成
-   * @param review - 口コミオブジェクト
+   * クチコミカードのHTML要素を生成
+   * @param review - クチコミオブジェクト
    * @returns カード要素
    */
   createReviewCard(review: Review): HTMLElement {

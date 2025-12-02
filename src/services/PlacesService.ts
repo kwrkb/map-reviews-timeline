@@ -82,7 +82,7 @@ export class PlacesService {
    * 複数スポットの詳細情報を並列取得
    * @param places - スポットの配列
    * @param maxPlaces - 最大取得数
-   * @returns 口コミ付きスポット情報の配列
+   * @returns クチコミ付きスポット情報の配列
    */
   async fetchPlaceDetailsInParallel(
     places: google.maps.places.Place[],
@@ -97,7 +97,7 @@ export class PlacesService {
 
     const results = await Promise.allSettled(placeDetailsPromises);
 
-    // 成功したリクエストから口コミを抽出
+    // 成功したリクエストからクチコミを抽出
     const reviews: Review[] = [];
     results.forEach((result) => {
       if (result.status === 'fulfilled' && result.value) {

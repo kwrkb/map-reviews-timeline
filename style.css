@@ -96,6 +96,16 @@ body {
     font-weight: 700;
 }
 
+/* ===== 説明 ===== */
+.description {
+    padding: 12px 20px;
+    background-color: #16181c;
+    color: #71767b;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid #2f3336;
+}
+
 /* ===== ボタン ===== */
 .primary-btn {
     background-color: #1d9bf0;
@@ -175,6 +185,8 @@ body {
     outline: none;
     border-color: #1d9bf0;
 }
+
+
 
 .search-btn {
     background-color: #1d9bf0;
@@ -307,17 +319,32 @@ body {
     color: #71767b;
 }
 
-/* ===== 口コミカード ===== */
+/* ===== クチコミカード ===== */
 .review-card {
     background-color: #16181c;
     border-bottom: 1px solid #2f3336;
     padding: 16px 20px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, box-shadow 0.3s;
 }
 
 .review-card:hover {
     background-color: #1a1d21;
+}
+
+.review-card.highlight {
+    background-color: rgba(29, 155, 240, 0.15);
+    box-shadow: 0 0 0 2px #1d9bf0;
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
 }
 
 .review-header {

@@ -122,14 +122,14 @@ export class UIManager {
   }
 
   /**
-   * タイムラインに口コミを表示
-   * @param reviewCards - 口コミカードの配列
+   * タイムラインにクチコミを表示
+   * @param reviewCards - クチコミカードの配列
    */
   displayReviews(reviewCards: HTMLElement[]): void {
     if (reviewCards.length === 0) {
       this.elements.timeline.innerHTML = `
         <div class="empty-state">
-          <p>「この範囲の口コミを取得」ボタンを押して、<br>地図範囲内のスポットの口コミを表示します。</p>
+          <p>「この範囲のクチコミを取得」ボタンを押して、<br>地図範囲内のスポットのクチコミを表示します。</p>
         </div>
       `;
       return;
