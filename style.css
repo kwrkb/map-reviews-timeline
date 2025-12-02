@@ -364,6 +364,15 @@ body {
     gap: 4px;
 }
 
+.place-info.clickable {
+    cursor: pointer;
+    transition: text-decoration 0.2s;
+}
+
+.place-info.clickable:hover {
+    text-decoration: underline;
+}
+
 .rating {
     color: #ffd700;
     font-size: 16px;
