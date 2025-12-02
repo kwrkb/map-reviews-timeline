@@ -45,6 +45,11 @@ VITE_GOOGLE_MAPS_API_KEY="your_key" npm run dev
 export VITE_GOOGLE_MAPS_API_KEY="your_key"
 ```
 
+**API Key Priority:**
+- Environment variable (`VITE_GOOGLE_MAPS_API_KEY`) takes priority if set
+- Falls back to localStorage (`googleMapsApiKey`) if environment variable is not set
+- Settings button is hidden when environment variable is present
+
 **Required Google Cloud APIs:**
 - Maps JavaScript API
 - Places API (New) - NOT the legacy Places API
@@ -76,7 +81,9 @@ The codebase uses a **service-based architecture** where concerns are separated 
 
 1. **Places API (New) Integration**
    - Uses the NEW Places API (not legacy)
-   - Field-based requests: `fields: ['displayName', 'reviews', 'types', 'location']`
+   - **Nearby Search:** `fields: ['id', 'displayName', 'formattedAddress', 'location', 'types']`
+   - **Place Details:** `fields: ['displayName', 'reviews', 'types', 'location']`
+   - **Text Search:** `fields: ['displayName', 'formattedAddress', 'location']` for place name search
    - Parallel fetching with `Promise.allSettled` for performance
    - Maximum 5 reviews per place (API limitation)
    - Maximum 20 places per search (app limitation)
@@ -157,10 +164,19 @@ The New Places API has different field names than legacy:
 
 ### Marker-Review Linking
 
-- Each review card gets unique ID: `review-${btoa(placeName-time)}`
+- Each review card gets unique ID: `review-${btoa(encodeURIComponent(placeName-time))}`
+  - Uses `encodeURIComponent` before `btoa` to handle Japanese characters safely
+  - Removes `=` padding characters from base64 string
 - `MarkerService` maintains `Map<AdvancedMarkerElement, Review>` for lookup
 - Click handler: `marker.addListener('click', () => onMarkerClick(review))`
 - Scroll + highlight animation on card when marker clicked
+
+### Place Search (Text Search API)
+
+- Uses Places API (New) Text Search: `Place.searchByText()`
+- Searches by text query (地名や住所)
+- Retrieves first result and centers map on location
+- Uses `maxResultCount: 1` to limit API costs
 
 ## Terminology Standards
 
@@ -197,42 +213,23 @@ If HMR isn't working in WSL2, these settings should fix it.
 
 ## Common Development Patterns
 
-### Adding a New Service
+### Service vs Manager Separation
 
-1. Create in `src/services/[ServiceName].ts`
-2. Export as ES6 class with clear public methods
-3. Document with JSDoc comments
-4. Import and instantiate in `app.ts`
+- **Services** (`src/services/`): API calls, external integrations, data processing
+- **Managers** (`src/managers/`): DOM manipulation, UI state, event handling
+- Keep business logic in services, keep UI concerns in managers
+- All instantiated and orchestrated in `app.ts`
 
-### Adding a New Manager
+### Review Display
 
-1. Create in `src/managers/[ManagerName].ts`
-2. Handle UI state or DOM manipulation
-3. Keep business logic in services, not managers
-4. Manager = DOM/Events, Service = API/Data
-
-### Updating Review Display
-
-Review rendering happens in two places:
-- `app.ts` → `createReviewCard()` for main display
-- `ReviewManager.ts` → `createReviewCard()` (currently unused but available)
-
-Consider consolidating to use ReviewManager for consistency.
+Review rendering currently happens in `app.ts` → `createReviewCard()`. The `ReviewManager` has an unused `createReviewCard()` method that could be used for consolidation.
 
 ### Error Handling
 
-- Use `try/catch` with `Promise.allSettled` for parallel requests
-- Show user-friendly errors via `showError()` function
+- Use `try/catch` with `Promise.allSettled` for parallel API requests
+- Show user-friendly errors via `showError()` function (Japanese messages)
 - Log detailed errors to console for debugging
-- Don't expose API keys or sensitive data in errors
-
-## Testing Strategy
-
-Currently no test framework configured. When adding tests:
-- Consider Vitest (natural fit with Vite)
-- Focus on service layer (PlacesService, MapService)
-- Mock Google Maps API calls
-- Test Review data transformations
+- Never expose API keys or sensitive data in error messages
 
 ## API Considerations
 
