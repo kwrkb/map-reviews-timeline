@@ -119,7 +119,6 @@ function initMap(): void {
   } catch (error) {
     console.error('Map initialization error:', error);
     showError('地図の初期化に失敗しました。APIキーの設定を確認してください。');
-    showApiKeyModal();
   }
 }
 
