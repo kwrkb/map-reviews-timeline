@@ -24,5 +24,8 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Playwright CLI の検証成果物（スクリーンショット・コンソールログ）
+.playwright-cli/
+
 # Old JavaScript file (replaced by TypeScript)
 app.js
