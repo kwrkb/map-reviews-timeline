@@ -118,8 +118,7 @@ function initMap(): void {
     console.log('Google Maps initialized successfully');
   } catch (error) {
     console.error('Map initialization error:', error);
-    showError('地図の初期化に失敗しました。APIキーの設定を確認してください。');
-    showApiKeyModal();
+    showError('地図の初期化に失敗しました。環境変数 VITE_GOOGLE_MAPS_API_KEY の設定を確認してください。');
   }
 }
 
