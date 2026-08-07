@@ -39,3 +39,9 @@
 - **却下した案**: `(window as any).gm_authFailure = ...` を残し、biome の `noExplicitAny` warning を許容する（設定上は warn なのでビルドは通る）
 - **決め手**: Google Maps API が要求するグローバルは `gm_authFailure` と `initMapCallback` の2つだけで、`declare global { interface Window { ... } }` 6行で型が付く。`as any` は代入先のタイポ（`initMapCallbak` 等）を型検査で捕まえられず、スクリプトの `callback=initMapCallback` と食い違っても実行時まで気付けない。この置換で biome の warning は 2件 → 0件になった
 - **覆す条件**: 動的に決まる名前でグローバルを生やす必要が出たとき
+
+## 2026-08-07: 依存のメジャー更新時は engines を明示する
+
+- **却下した案**: vite 5 → 8 の更新だけ行い、Node バージョン要件は package.json に書かない（従来どおり engines なし）
+- **決め手**: vite 8 の package.json は `engines: {"node": "^20.19.0 || >=22.12.0"}` を宣言しており、この制約が package-lock.json には入る一方、プロジェクト側には engines も README の Node 要件も無かった。Node 18 や 20.18 以下の環境では `npm install` は通るのにビルドだけ失敗する状態になっていた（Codex のレビュー指摘 P2 で発覚）
+- **覆す条件**: 依存の中で最も要求の厳しい engines が緩和されたとき。その場合はプロジェクトの engines も追随して下げる
