@@ -25,7 +25,7 @@ Google Mapsで表示している範囲内のスポットの口コミを、X（�
 
 ### コア技術
 - **TypeScript 5.3+**: 型安全な開発
-- **Vite 5.0+**: 高速ビルドツール（HMR対応）
+- **Vite 8**: 高速ビルドツール（HMR対応）— Node.js `^20.19.0 || >=22.12.0` が必要
 - **Google Maps JavaScript API**: 地図表示・操作
 - **Google Places API (New)**: スポット情報・口コミ取得
 
@@ -36,17 +36,11 @@ Google Mapsで表示している範囲内のスポットの口コミを、X（�
 
 ```
 src/
-├── app.ts                 # メインアプリケーション
-├── types/
-│   └── index.ts           # 型定義
+├── app.ts                     # メインアプリケーション（UI・Places API・描画）
 ├── services/
-│   ├── MapService.ts      # Google Maps操作
-│   └── PlacesService.ts   # Places API (New) + 並列処理
-├── managers/
-│   ├── UIManager.ts       # DOM操作・イベント管理
-│   └── ReviewManager.ts   # レビュー表示・ソート
-└── utils/
-    └── helpers.ts         # ヘルパー関数
+│   └── MarkerService.ts       # Advanced Marker + クラスタリング
+└── types/
+    └── index.ts               # 型定義
 ```
 
 ## セットアップ
@@ -60,7 +54,11 @@ cd map-reviews-timeline
 
 ### 2. 依存関係のインストール
 
+**前提: Node.js `^20.19.0 || >=22.12.0`**（Vite 8 の要求バージョン）。
+これより古い Node では `npm install` の時点で警告が出て、ビルドが失敗します。
+
 ```bash
+node -v          # バージョンを確認
 npm install
 ```
 
@@ -272,7 +270,7 @@ A web application that displays reviews of spots within the visible Google Maps 
 
 #### Core Technologies
 - **TypeScript 5.3+**: Type-safe development
-- **Vite 5.0+**: Fast build tool (with HMR support)
+- **Vite 8**: Fast build tool (with HMR support) — requires Node.js `^20.19.0 || >=22.12.0`
 - **Google Maps JavaScript API**: Map display and manipulation
 - **Google Places API (New)**: Spot information and review fetching
 
@@ -283,17 +281,11 @@ A web application that displays reviews of spots within the visible Google Maps 
 
 ```
 src/
-├── app.ts                 # Main application
-├── types/
-│   └── index.ts           # Type definitions
+├── app.ts                     # Main application (UI, Places API, rendering)
 ├── services/
-│   ├── MapService.ts      # Google Maps operations
-│   └── PlacesService.ts   # Places API (New) + parallel processing
-├── managers/
-│   ├── UIManager.ts       # DOM manipulation & event management
-│   └── ReviewManager.ts   # Review display & sorting
-└── utils/
-    └── helpers.ts         # Helper functions
+│   └── MarkerService.ts       # Advanced Markers + clustering
+└── types/
+    └── index.ts               # Type definitions
 ```
 
 ### Setup
@@ -307,7 +299,11 @@ cd map-reviews-timeline
 
 #### 2. Install Dependencies
 
+**Prerequisite: Node.js `^20.19.0 || >=22.12.0`** (required by Vite 8).
+Older versions will warn during `npm install` and fail to build.
+
 ```bash
+node -v          # check your version
 npm install
 ```
 

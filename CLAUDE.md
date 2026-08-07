@@ -52,10 +52,12 @@ VITE_GOOGLE_MAPS_API_KEY="your_key" npm run dev
 export VITE_GOOGLE_MAPS_API_KEY="your_key"
 ```
 
-**API Key Priority:**
-- Environment variable (`VITE_GOOGLE_MAPS_API_KEY`) takes priority if set
-- Falls back to localStorage (`googleMapsApiKey`) if environment variable is not set
-- Settings button is hidden when environment variable is present
+**API Key Handling:**
+- The environment variable is the ONLY source. There is no in-app settings UI and no localStorage fallback.
+- `vite.config.ts` fails the build when the variable is missing. This is deliberate: `import.meta.env.VITE_*`
+  is statically replaced at build time, so an unset key turns the startup guard into a constant `true` and
+  Rollup tree-shakes the entire app away (31 kB → 1.6 kB bundle) while the build still reports success.
+- The key is embedded in the bundle by design. Restrict it in Google Cloud (HTTP referrer + API restrictions).
 
 **Required Google Cloud APIs:**
 - Maps JavaScript API
@@ -63,28 +65,22 @@ export VITE_GOOGLE_MAPS_API_KEY="your_key"
 
 ## Architecture Overview
 
-### Service Layer Pattern
+### Module Layout
 
-The codebase uses a **service-based architecture** with most orchestration in `app.ts`:
+All orchestration, DOM manipulation and Places API access lives in `app.ts`.
+The only extracted module is `MarkerService`, which owns Advanced Markers and clustering:
 
 ```
-┌─────────────┐
-│   app.ts    │  Entry point - handles most UI logic and orchestration
-└──────┬──────┘
-       │
-       ├──────────────────────┐
-       │                      │
-   ┌───▼────────┐        ┌────▼──────────┐
-   │  Services  │        │   Managers    │  (Available but currently unused)
-   └────────────┘        └───────────────┘
-       │                      │
-       ├── PlacesService      ├── UIManager        (DOM references)
-       ├── MarkerService      └── ReviewManager    (Sorting logic)
-       ├── MapService
-       └── StorageService     (Available but unused)
+src/
+├── app.ts                     Entry point - all UI logic, Places API calls, rendering
+├── services/MarkerService.ts  Advanced Markers + MarkerClusterer
+└── types/index.ts             Review interface
 ```
 
-**Note:** While the architecture supports service/manager separation, the current implementation centralizes most logic in `app.ts` for simplicity. Managers and some services exist but are not actively used.
+**Note:** An earlier service/manager split (`MapService`, `PlacesService`, `StorageService`,
+`UIManager`, `ReviewManager`, `utils/helpers`) was deleted — those modules predated the
+Places API (New) migration, were imported by nothing, and duplicated `app.ts` logic.
+Do not re-create that layer speculatively; extract only what a second caller actually needs.
 
 ### Key Architectural Decisions
 
@@ -120,9 +116,9 @@ User Action (Click "Get Reviews")
     ↓
 searchReviews() in app.ts
     ↓
-PlacesService.searchNearbyPlaces()  → Fetch places in bounds
+searchNearbyPlaces()                → Fetch places in bounds (max 20)
     ↓
-PlacesService.getPlaceDetails()     → Parallel fetch (Promise.allSettled)
+getPlaceDetails() × N               → Parallel fetch (Promise.allSettled)
     ↓
 Build Review[] array with placeLocation
     ↓
@@ -256,24 +252,23 @@ If HMR isn't working in WSL2, these settings should fix it.
 
 ## Common Development Patterns
 
-### Service vs Manager Separation
+### Where Code Goes
 
-- **Services** (`src/services/`): API calls, external integrations, data processing
-  - `MapService`: Map initialization and theme (currently minimal, most logic in app.ts)
-  - `PlacesService`: Places API (New) integration - nearby search, details, text search
-  - `MarkerService`: Advanced Markers creation, clustering, click handling
-  - `StorageService`: localStorage wrapper (available but currently unused)
-- **Managers** (`src/managers/`): DOM manipulation, UI state, event handling
-  - `UIManager`: DOM element references and UI state (available but currently unused)
-  - `ReviewManager`: Review sorting and display logic (available but currently unused)
-- **Current Architecture**: Most logic is in `app.ts` for simplicity
-  - Services are instantiated but managers are not currently used
-  - Direct DOM manipulation in `app.ts` rather than through UIManager
-  - Future refactor could consolidate into managers for better separation
+- `src/services/MarkerService.ts`: everything touching `AdvancedMarkerElement` / `MarkerClusterer`
+- `src/app.ts`: everything else — Places API calls, sorting, rendering, theme, error toasts
+
+Extract a new module only when a second call site exists. The repo previously carried
+~500 lines of unused "future refactor" scaffolding; it rotted rather than being adopted.
 
 ### Review Display
 
-Review rendering happens in `app.ts` → `createReviewCard()` function. The `ReviewManager` has an unused `createReviewCard()` method that could be used for consolidation in future refactoring.
+Review rendering happens in `app.ts` → `createReviewCard()`.
+
+### HTML Escaping
+
+`createReviewCard()` builds markup with `innerHTML`, so every interpolated value must go through
+`escapeHtml()`. That helper escapes `& < >` via `textContent` **and** `" '` explicitly — the
+`textContent → innerHTML` trick alone does not escape quotes, which is unsafe in attribute position.
 
 ### Error Handling
 

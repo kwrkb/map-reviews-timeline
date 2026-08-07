@@ -1,6 +1,14 @@
 import { MarkerService } from './services/MarkerService';
 import type { Review } from './types';
 
+// Google Maps API がグローバルに要求するコールバック
+declare global {
+  interface Window {
+    gm_authFailure?: () => void;
+    initMapCallback?: () => void;
+  }
+}
+
 // ===== 型定義 =====
 interface PlaceDetailsResult {
   name: string;
@@ -37,21 +45,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const envApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   if (!envApiKey) {
-    showError('環境変数 VITE_GOOGLE_MAPS_API_KEY が設定されていません。README.mdを参照してください。');
+    showError(
+      '環境変数 VITE_GOOGLE_MAPS_API_KEY が設定されていません。README.mdを参照してください。'
+    );
     return;
   }
 
   apiKey = envApiKey;
-
-  // 環境変数がある場合は設定ボタンとモーダルを非表示
-  const settingsBtn = document.getElementById('settingsBtn');
-  const apiKeyModal = document.getElementById('apiKeyModal');
-  if (settingsBtn) {
-    settingsBtn.style.display = 'none';
-  }
-  if (apiKeyModal) {
-    apiKeyModal.style.display = 'none';
-  }
 
   loadGoogleMapsScript();
 
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== Google Maps スクリプト読み込み =====
 function loadGoogleMapsScript(): void {
   // Google Maps APIのエラーハンドラーを設定
-  (window as any).gm_authFailure = () => {
+  window.gm_authFailure = () => {
     console.error('Google Maps API authentication failed');
     showError(
       'Google Maps APIの認証に失敗しました。環境変数 VITE_GOOGLE_MAPS_API_KEY を確認してください。'
@@ -88,7 +88,7 @@ function loadGoogleMapsScript(): void {
   };
 
   // グローバルコールバック関数を設定
-  (window as any).initMapCallback = () => {
+  window.initMapCallback = () => {
     initMap();
   };
 
@@ -119,7 +119,6 @@ function initMap(): void {
   } catch (error) {
     console.error('Map initialization error:', error);
     showError('地図の初期化に失敗しました。APIキーの設定を確認してください。');
-    showApiKeyModal();
   }
 }
 
@@ -205,39 +204,47 @@ async function searchReviews(): Promise<void> {
       return;
     }
 
-    // 各スポットの詳細（クチコミ含む）を取得
+    // 各スポットの詳細（クチコミ含む）を並列取得
+    const targetPlaces = places.slice(0, 20); // 最大20スポットに制限
+    const totalPlaces = targetPlaces.length;
     let fetchedCount = 0;
-    const totalPlaces = Math.min(places.length, 20); // 最大20スポットに制限
 
-    for (let i = 0; i < totalPlaces; i++) {
-      try {
-        const placeId = places[i].place_id;
-        if (!placeId) continue;
-        const placeDetails = await getPlaceDetails(placeId);
+    updateLoadingText(`クチコミを取得中... (0/${totalPlaces})`);
 
-        if (placeDetails?.reviews && placeDetails.reviews.length > 0) {
-          // クチコミをallReviewsに追加
-          placeDetails.reviews.forEach((review) => {
-            allReviews.push({
-              author_name: review.author_name || '匿名',
-              profile_photo_url: review.profile_photo_url,
-              rating: review.rating || 0,
-              text: review.text || '',
-              time: review.time || 0,
-              placeName: placeDetails.name,
-              placeTypes: placeDetails.types || [],
-              placeLocation: placeDetails.geometry?.location,
-            });
-          });
+    const results = await Promise.allSettled(
+      targetPlaces.map(async (place) => {
+        const placeId = place.place_id;
+        if (!placeId) return null;
+        try {
+          return await getPlaceDetails(placeId);
+        } finally {
+          fetchedCount++;
+          updateLoadingText(`クチコミを取得中... (${fetchedCount}/${totalPlaces})`);
         }
+      })
+    );
 
-        fetchedCount++;
-
-        // 進捗を表示
-        updateLoadingText(`クチコミを取得中... (${fetchedCount}/${totalPlaces})`);
-      } catch (error) {
-        console.error('Place details error:', error);
+    // allSettled は入力順を保持するため、結果の並びは決定的
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        console.error('Place details error:', result.reason);
+        continue;
       }
+
+      const placeDetails = result.value;
+      if (!placeDetails?.reviews || placeDetails.reviews.length === 0) continue;
+
+      placeDetails.reviews.forEach((review) => {
+        allReviews.push({
+          author_name: review.author_name || '匿名',
+          rating: review.rating || 0,
+          text: review.text || '',
+          time: review.time || 0,
+          placeName: placeDetails.name,
+          placeTypes: placeDetails.types || [],
+          placeLocation: placeDetails.geometry?.location,
+        });
+      });
     }
 
     if (allReviews.length === 0) {
@@ -399,18 +406,10 @@ function createReviewCard(review: Review): HTMLElement {
   // カテゴリの取得（最初のtype）
   const category = getCategoryName(review.placeTypes || []);
 
-  // プロフィール画像（なければデフォルト）
-  const defaultAvatar =
-    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect fill="%232f3336" width="48" height="48"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%2371767b" font-size="20"%3E👤%3C/text%3E%3C/svg%3E';
-  const profilePhoto = review.profile_photo_url || defaultAvatar;
-
   article.innerHTML = `
-    <div class="review-header">
-      <img src="${profilePhoto}" class="avatar" alt="${escapeHtml(review.author_name)}" onerror="this.src='${defaultAvatar}'">
-      <div class="review-meta">
-        <span class="author-name">${escapeHtml(review.author_name)}</span>
-        <span class="post-time">${relativeTime}</span>
-      </div>
+    <div class="review-meta">
+      <span class="author-name">${escapeHtml(review.author_name)}</span>
+      <span class="post-time">${relativeTime}</span>
     </div>
     <div class="review-body">
       <div class="place-info clickable">📍 ${escapeHtml(review.placeName || '')}${category ? ` · ${category}` : ''}</div>
@@ -522,7 +521,9 @@ function getCategoryName(types: string[]): string {
 function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;
-  return div.innerHTML;
+  // textContent → innerHTML では & < > しかエスケープされない。
+  // 属性値に埋め込んでも属性を脱出されないよう引用符も置換する。
+  return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ===== ローディング制御 =====
