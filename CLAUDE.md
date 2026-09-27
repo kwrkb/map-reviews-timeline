@@ -77,10 +77,7 @@ src/
 └── types/index.ts             Review interface
 ```
 
-**Note:** An earlier service/manager split (`MapService`, `PlacesService`, `StorageService`,
-`UIManager`, `ReviewManager`, `utils/helpers`) was deleted — those modules predated the
-Places API (New) migration, were imported by nothing, and duplicated `app.ts` logic.
-Do not re-create that layer speculatively; extract only what a second caller actually needs.
+Keep this two-module layout; extract a new module only when a second caller actually needs it.
 
 ### Key Architectural Decisions
 
@@ -256,8 +253,7 @@ If HMR isn't working in WSL2, these settings should fix it.
 - `src/services/MarkerService.ts`: everything touching `AdvancedMarkerElement` / `MarkerClusterer`
 - `src/app.ts`: everything else — Places API calls, sorting, rendering, theme, error toasts
 
-Extract a new module only when a second call site exists. The repo previously carried
-~500 lines of unused "future refactor" scaffolding; it rotted rather than being adopted.
+Extract a new module only when a second call site exists.
 
 ### Review Display
 
@@ -285,7 +281,7 @@ Review rendering happens in `app.ts` → `createReviewCard()`.
 - Consider caching results to reduce API calls
 
 **Cost Optimization:**
-- Google Maps Platform has $200/month free tier
+- Free usage is set per SKU; check the current Google Maps Platform pricing page before relying on a number
 - Monitor usage in Google Cloud Console
 - Set budget alerts to avoid surprises
 - Narrow search radius to reduce place count
