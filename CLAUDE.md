@@ -86,7 +86,7 @@ Do not re-create that layer speculatively; extract only what a second caller act
 
 1. **Places API (New) Integration**
    - Uses the NEW Places API (not legacy)
-   - **Nearby Search:** `fields: ['id', 'displayName', 'formattedAddress', 'location', 'types']`
+   - **Nearby Search:** `fields: ['id', 'displayName']`, `maxResultCount: 20`
    - **Place Details:** `fields: ['displayName', 'reviews', 'types', 'location']`
    - **Text Search:** `fields: ['displayName', 'formattedAddress', 'location']` for place name search
    - Parallel fetching with `Promise.allSettled` for performance
@@ -135,7 +135,6 @@ User clicks marker → scrollToReviewCard() → Highlight + scroll
 ```typescript
 interface Review {
   author_name: string;
-  profile_photo_url?: string;
   rating: number;
   text: string;
   time: number;              // Unix timestamp in seconds
@@ -157,7 +156,7 @@ The New Places API has different field names than legacy:
 - ✅ `place.displayName` (not `name`)
 - ✅ `review.authorAttribution.displayName` (not `author_name`)
 - ✅ `review.text.text` or `review.text` (text can be object or string)
-- ✅ `review.publishTime.seconds` (not `time`)
+- ✅ `review.publishTime` (converted with `new Date(review.publishTime).getTime() / 1000`, not `time`)
 - ✅ `place.location` (not `geometry.location`)
 
 ### Advanced Marker Requirements
